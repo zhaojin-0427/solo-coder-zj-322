@@ -135,15 +135,14 @@ export class RoutesService {
     planId: string,
     plan: any,
     prefs: any[],
-    staminaBias: number,
-    restBias: number,
+    walkScale: number,
+    restScale: number,
     versionLabel: string,
   ): Route {
     const avgStaminaWeight =
       prefs.reduce((sum, p) => sum + STAMINA_WEIGHT[p.staminaLevel], 0) / prefs.length;
-    const weightedStamina = Math.max(0.4, Math.min(1.4, avgStaminaWeight * staminaBias));
     const avgStaminaLevel: StaminaLevel =
-      weightedStamina <= 0.7 ? '低' : weightedStamina <= 0.97 ? '中' : '高';
+      avgStaminaWeight <= 0.7 ? '低' : avgStaminaWeight <= 0.97 ? '中' : '高';
     const hasSunSensitive = prefs.some((p) => p.sunSensitive);
     const hasColdSensitive = prefs.some((p) => p.coldSensitive);
     const avgRestFreq =
@@ -156,8 +155,8 @@ export class RoutesService {
       .sort((a, b) => (a < b ? 1 : -1))[0];
 
     const baseWalk = plan.estimatedWalkMinutes;
-    const adjustedWalk = Math.round(baseWalk / weightedStamina);
-    const restIntervalMinutes = Math.max(15, Math.min(45, Math.round(avgRestFreq * (1 / weightedStamina) * restBias)));
+    const adjustedWalk = Math.round(baseWalk * walkScale);
+    const restIntervalMinutes = Math.max(15, Math.min(45, Math.round(avgRestFreq * restScale)));
     const restCount = Math.max(1, Math.floor(adjustedWalk / restIntervalMinutes));
     const restBasePerStop = STAMINA_REST_BONUS[avgStaminaLevel];
     const totalRest = restCount * (restBasePerStop + (hasSunSensitive ? 3 : 0));
@@ -199,7 +198,7 @@ export class RoutesService {
       reason: `行程结束，建议${maxEndTime}前到达附近停车场`,
     });
 
-    const diffScore = (adjustedWalk / 60) * plan.stepSlope * (1 / weightedStamina);
+    const diffScore = (adjustedWalk / 60) * plan.stepSlope * walkScale;
     let difficulty: Difficulty = 'easy';
     if (diffScore >= 5) difficulty = 'hard';
     else if (diffScore >= 2.5) difficulty = 'moderate';
@@ -241,14 +240,16 @@ export class RoutesService {
       throw new BadRequestException('该计划还没有设置同行长者偏好，无法生成路线');
     }
 
-    const versions: Array<{ stamina: number; rest: number; label: string }> = [
-      { stamina: 0.75, rest: 0.8, label: '轻松版（推荐体弱长者）' },
-      { stamina: 1.0, rest: 1.0, label: '标准版（平衡）' },
-      { stamina: 1.3, rest: 1.25, label: '深度版（推荐体力好）' },
+    this.routes = this.routes.filter((r) => r.planId !== planId);
+
+    const versions: Array<{ walkScale: number; restScale: number; label: string }> = [
+      { walkScale: 0.7, restScale: 0.7, label: '轻松版（推荐体弱长者）' },
+      { walkScale: 1.0, restScale: 1.0, label: '标准版（平衡）' },
+      { walkScale: 1.4, restScale: 1.4, label: '深度版（推荐体力好）' },
     ];
 
     const routes = versions.map((v) =>
-      this.buildRouteForVersion(planId, plan, prefs, v.stamina, v.rest, v.label),
+      this.buildRouteForVersion(planId, plan, prefs, v.walkScale, v.restScale, v.label),
     );
     this.routes.push(...routes);
     return routes;

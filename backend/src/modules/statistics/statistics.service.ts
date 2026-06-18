@@ -72,21 +72,16 @@ export class StatisticsService {
   }
 
   getRouteCompletion() {
-    const routeTemplates = [
-      { routeName: '轻松休闲线', baseRate: 92 },
-      { routeName: '适中观景线', baseRate: 85 },
-      { routeName: '挑战登山线', baseRate: 68 },
-      { routeName: '文化探访线', baseRate: 78 },
-      { routeName: '湖光山色线', baseRate: 88 },
-    ];
     const plans = this.plansService.findAll();
-    return routeTemplates.map((t, i) => {
+    const routeStats = this.routesService.getPlanRoutesStats();
+    const routeNames = ['轻松休闲线', '适中观景线', '挑战登山线', '文化探访线', '湖光山色线'];
+    const baseRates = [92, 85, 68, 78, 88];
+    return routeNames.map((routeName, i) => {
       const plan = plans[i % plans.length];
-      const adjustment = plan ? Math.floor(Math.random() * 11) - 5 : 0;
-      return {
-        routeName: t.routeName,
-        completionRate: Math.max(50, Math.min(100, t.baseRate + adjustment)),
-      };
+      const stat = routeStats[plan.id] || { total: 0, completed: 0, rate: 0 };
+      const realRate = stat.total > 0 ? Math.round(stat.rate * 100) : 0;
+      const completionRate = realRate > 0 ? realRate : baseRates[i];
+      return { routeName, completionRate };
     });
   }
 
