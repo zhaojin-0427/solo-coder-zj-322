@@ -9,6 +9,10 @@ import {
   LowConsensusReasonItem,
   FeedbackAcceptanceByStaminaItem,
   ConsensusByRouteItem,
+  CareTaskStats,
+  CareFailureReasonItem,
+  CarePriorityDistributionItem,
+  CarePlanBurdenItem,
 } from './entities/statistics.entity';
 
 @ApiTags('statistics')
@@ -87,6 +91,34 @@ export class StatisticsController {
   @ApiOkResponse({ type: [ConsensusByRouteItem] })
   getConsensusByRoute(): ConsensusByRouteItem[] {
     return this.statisticsService.getConsensusByRoute();
+  }
+
+  @Get('care-task-stats')
+  @ApiOperation({ summary: '获取照护任务统计数据' })
+  @ApiOkResponse({ type: CareTaskStats })
+  getCareTaskStats(): CareTaskStats {
+    return this.statisticsService.getCareTaskStats();
+  }
+
+  @Get('care-failure-reasons')
+  @ApiOperation({ summary: '获取照护任务未完成原因统计' })
+  @ApiOkResponse({ type: [CareFailureReasonItem] })
+  getCareFailureReasons(): CareFailureReasonItem[] {
+    return this.statisticsService.getCareFailureReasons();
+  }
+
+  @Get('care-priority-distribution')
+  @ApiOperation({ summary: '获取照护任务按优先级分布' })
+  @ApiOkResponse({ type: [CarePriorityDistributionItem] })
+  getCarePriorityDistribution(): CarePriorityDistributionItem[] {
+    return this.statisticsService.getCarePriorityDistribution();
+  }
+
+  @Get('care-plan-burden')
+  @ApiOperation({ summary: '获取各计划照护负担分布' })
+  @ApiOkResponse({ type: [CarePlanBurdenItem] })
+  getCarePlanBurden(): CarePlanBurdenItem[] {
+    return this.statisticsService.getCarePlanBurden();
   }
 
   @Get('all')

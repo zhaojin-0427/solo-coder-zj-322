@@ -5,7 +5,11 @@ import type {
   ConsensusStats,
   LowConsensusReasonItem,
   FeedbackAcceptanceByStaminaItem,
-  ConsensusByRouteItem
+  ConsensusByRouteItem,
+  CareTaskStats,
+  CareFailureReasonItem,
+  CarePriorityDistributionItem,
+  CarePlanBurdenItem,
 } from '@/types'
 
 const BASE_URL = '/statistics'
@@ -69,6 +73,34 @@ export function getFeedbackAcceptanceByStamina() {
 export function getConsensusByRoute() {
   return request<ConsensusByRouteItem[]>({
     url: `${BASE_URL}/consensus-by-route`,
+    method: 'get'
+  })
+}
+
+export function getCareTaskStats() {
+  return request<CareTaskStats>({
+    url: `${BASE_URL}/care-task-stats`,
+    method: 'get'
+  })
+}
+
+export function getCareFailureReasons() {
+  return request<CareFailureReasonItem[]>({
+    url: `${BASE_URL}/care-failure-reasons`,
+    method: 'get'
+  })
+}
+
+export function getCarePriorityDistribution() {
+  return request<CarePriorityDistributionItem[]>({
+    url: `${BASE_URL}/care-priority-distribution`,
+    method: 'get'
+  })
+}
+
+export function getCarePlanBurden() {
+  return request<CarePlanBurdenItem[]>({
+    url: `${BASE_URL}/care-plan-burden`,
     method: 'get'
   })
 }

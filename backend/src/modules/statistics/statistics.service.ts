@@ -4,6 +4,7 @@ import { PreferencesService } from '../preferences/preferences.service';
 import { RoutesService } from '../routes/routes.service';
 import { ChangesService } from '../changes/changes.service';
 import { FeedbacksService } from '../feedbacks/feedbacks.service';
+import { CareTasksService } from '../care-tasks/care-tasks.service';
 import { StaminaLevel } from '../preferences/entities/preference.entity';
 import {
   OverviewStatistics,
@@ -14,6 +15,10 @@ import {
   LowConsensusReasonItem,
   FeedbackAcceptanceByStaminaItem,
   ConsensusByRouteItem,
+  CareTaskStats,
+  CareFailureReasonItem,
+  CarePriorityDistributionItem,
+  CarePlanBurdenItem,
 } from './entities/statistics.entity';
 
 @Injectable()
@@ -24,6 +29,7 @@ export class StatisticsService {
     private readonly routesService: RoutesService,
     private readonly changesService: ChangesService,
     private readonly feedbacksService: FeedbacksService,
+    private readonly careTasksService: CareTasksService,
   ) {}
 
   getOverview(): OverviewStatistics {
@@ -205,6 +211,55 @@ export class StatisticsService {
     }).sort((a, b) => b.consensusScore - a.consensusScore);
   }
 
+  getCareTaskStats(): CareTaskStats {
+    const stats = this.careTasksService.getStats();
+    return {
+      total: stats.total,
+      completed: stats.completed,
+      pending: stats.pending,
+      inProgress: stats.inProgress,
+      failed: stats.failed,
+      assigned: stats.assigned,
+      completionRate: stats.completionRate,
+      overdue: stats.overdue,
+    };
+  }
+
+  getCareFailureReasons(): CareFailureReasonItem[] {
+    const stats = this.careTasksService.getStats();
+    const total = stats.failureReasons.reduce((sum, r) => sum + r.count, 0);
+    return stats.failureReasons.map((r) => ({
+      reason: r.reason,
+      count: r.count,
+      percentage: total > 0 ? Math.round((r.count / total) * 100) : 0,
+    }));
+  }
+
+  getCarePriorityDistribution(): CarePriorityDistributionItem[] {
+    const stats = this.careTasksService.getStats();
+    return stats.priorityDistribution.map((p) => ({
+      priority: p.priority,
+      count: p.count,
+      completed: p.completed,
+    }));
+  }
+
+  getCarePlanBurden(): CarePlanBurdenItem[] {
+    const burden = this.careTasksService.getPlanBurden();
+    const plans = this.plansService.findAll();
+    const planMap: Record<string, string> = {};
+    plans.forEach((p) => {
+      planMap[p.id] = p.title;
+    });
+    return burden.map((b) => ({
+      planId: b.planId,
+      planTitle: planMap[b.planId] || b.planId,
+      taskCount: b.taskCount,
+      criticalCount: b.criticalCount,
+      highCount: b.highCount,
+    }));
+  }
+
   getAll() {
     const ov = this.getOverview();
     const overview = {
@@ -223,6 +278,10 @@ export class StatisticsService {
       lowConsensusReasons: this.getLowConsensusReasons(),
       feedbackAcceptanceByStamina: this.getFeedbackAcceptanceByStamina(),
       consensusByRoute: this.getConsensusByRoute(),
+      careTaskStats: this.getCareTaskStats(),
+      careFailureReasons: this.getCareFailureReasons(),
+      carePriorityDistribution: this.getCarePriorityDistribution(),
+      carePlanBurden: this.getCarePlanBurden(),
     };
   }
 }

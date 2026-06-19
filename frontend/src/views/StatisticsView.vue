@@ -72,6 +72,24 @@
           </div>
         </div>
       </el-col>
+      <el-col :xs="12" :sm="12" :md="6" :lg="6">
+        <div class="stat-card">
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <div>
+              <div class="stat-label">照护任务完成率</div>
+              <div class="stat-value" :style="{ color: careTaskStats.completionRate >= 70 ? '#67C23A' : '#E6A23C' }">
+                {{ careTaskStats.completionRate }}<span style="font-size: 18px">%</span>
+              </div>
+            </div>
+            <div class="stat-icon" style="background: #D4EDDA; color: #67C23A">
+              <el-icon :size="32"><FirstAidKit /></el-icon>
+            </div>
+          </div>
+          <div style="margin-top: 10px; font-size: 12px; color: #8B7B73">
+            共 {{ careTaskStats.total }} 个任务
+          </div>
+        </div>
+      </el-col>
     </el-row>
 
     <el-row :gutter="20" style="margin-bottom: 24px" v-loading="loading">
@@ -98,6 +116,42 @@
             <div class="stat-icon" style="background: #FDE2E2; color: #F56C6C">
               <el-icon :size="32"><RefreshRight /></el-icon>
             </div>
+          </div>
+        </div>
+      </el-col>
+      <el-col :xs="12" :sm="12" :md="6" :lg="6">
+        <div class="stat-card">
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <div>
+              <div class="stat-label">逾期照护任务</div>
+              <div class="stat-value" :style="{ color: careTaskStats.overdue > 0 ? '#F56C6C' : '#67C23A' }">
+                {{ careTaskStats.overdue }}<span style="font-size: 18px">个</span>
+              </div>
+            </div>
+            <div class="stat-icon" style="background: #FDE2E2; color: #F56C6C">
+              <el-icon :size="32"><WarningFilled /></el-icon>
+            </div>
+          </div>
+          <div style="margin-top: 10px; font-size: 12px; color: #8B7B73">
+            待完成 {{ careTaskStats.pending + careTaskStats.inProgress + careTaskStats.assigned }} 个
+          </div>
+        </div>
+      </el-col>
+      <el-col :xs="12" :sm="12" :md="6" :lg="6">
+        <div class="stat-card">
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <div>
+              <div class="stat-label">未完成任务</div>
+              <div class="stat-value" style="color: #F56C6C">
+                {{ careTaskStats.failed }}<span style="font-size: 18px">个</span>
+              </div>
+            </div>
+            <div class="stat-icon" style="background: #FDE2E2; color: #F56C6C">
+              <el-icon :size="32"><CircleClose /></el-icon>
+            </div>
+          </div>
+          <div style="margin-top: 10px; font-size: 12px; color: #8B7B73">
+            已完成 {{ careTaskStats.completed }} 个
           </div>
         </div>
       </el-col>
@@ -234,6 +288,84 @@
           </el-table>
         </div>
       </el-col>
+
+      <el-col :xs="24" :lg="12">
+        <div class="chart-container">
+          <div class="chart-title">
+            <el-icon style="color: #E8855A; margin-right: 6px"><FirstAidKit /></el-icon>
+            照护任务状态分布
+          </div>
+          <div ref="careStatusChartRef" style="height: 360px; width: 100%"></div>
+        </div>
+      </el-col>
+
+      <el-col :xs="24" :lg="12">
+        <div class="chart-container">
+          <div class="chart-title">
+            <el-icon style="color: #E8855A; margin-right: 6px"><WarningFilled /></el-icon>
+            高频未完成原因
+          </div>
+          <div ref="careFailureReasonsChartRef" style="height: 360px; width: 100%"></div>
+        </div>
+      </el-col>
+
+      <el-col :xs="24" :lg="12">
+        <div class="chart-container">
+          <div class="chart-title">
+            <el-icon style="color: #E8855A; margin-right: 6px"><TrendCharts /></el-icon>
+            照护任务优先级分布
+          </div>
+          <div ref="carePriorityChartRef" style="height: 360px; width: 100%"></div>
+        </div>
+      </el-col>
+
+      <el-col :xs="24" :lg="12">
+        <div class="chart-container">
+          <div class="chart-title">
+            <el-icon style="color: #E8855A; margin-right: 6px"><DataAnalysis /></el-icon>
+            各计划照护负担分布
+          </div>
+          <el-table :data="carePlanBurden" stripe border size="large" style="width: 100%">
+            <el-table-column type="index" label="排名" width="70" align="center">
+              <template #default="{ $index }">
+                <el-tag
+                  v-if="$index < 3"
+                  :type="['danger', 'warning', 'warning'][$index]"
+                  effect="dark"
+                  size="large"
+                >
+                  TOP {{ $index + 1 }}
+                </el-tag>
+                <span v-else style="font-weight: 600">{{ $index + 1 }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="planTitle" label="计划名称" min-width="160" />
+            <el-table-column label="任务总数" width="100" align="center">
+              <template #default="{ row }">
+                <el-tag type="primary" effect="light" size="large">
+                  {{ row.taskCount }} 个
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="紧急任务" width="100" align="center">
+              <template #default="{ row }">
+                <el-tag v-if="row.criticalCount > 0" type="danger" effect="light" size="large">
+                  {{ row.criticalCount }} 个
+                </el-tag>
+                <span v-else style="color: #909399">0 个</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="高优先级" width="100" align="center">
+              <template #default="{ row }">
+                <el-tag v-if="row.highCount > 0" type="warning" effect="light" size="large">
+                  {{ row.highCount }} 个
+                </el-tag>
+                <span v-else style="color: #909399">0 个</span>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </el-col>
     </el-row>
   </div>
 </template>
@@ -247,6 +379,7 @@ import {
   Calendar,
   CircleCheck,
   CircleCheckFilled,
+  CircleClose,
   Coffee,
   RefreshRight,
   DataAnalysis,
@@ -255,7 +388,8 @@ import {
   TrendCharts,
   WarningFilled,
   UserFilled,
-  Guide
+  Guide,
+  FirstAidKit
 } from '@element-plus/icons-vue'
 import {
   getAllStatistics,
@@ -267,7 +401,11 @@ import {
   getConsensusStats,
   getLowConsensusReasons,
   getFeedbackAcceptanceByStamina,
-  getConsensusByRoute
+  getConsensusByRoute,
+  getCareTaskStats,
+  getCareFailureReasons,
+  getCarePriorityDistribution,
+  getCarePlanBurden
 } from '@/api/statistics'
 import type {
   OverviewStats,
@@ -279,7 +417,11 @@ import type {
   LowConsensusReasonItem,
   FeedbackAcceptanceByStaminaItem,
   ConsensusByRouteItem,
-  StatisticsData
+  StatisticsData,
+  CareTaskStats,
+  CareFailureReasonItem,
+  CarePriorityDistributionItem,
+  CarePlanBurdenItem
 } from '@/types'
 
 const loading = ref(false)
@@ -288,12 +430,18 @@ const lineChartRef = ref<HTMLDivElement>()
 const pieChartRef = ref<HTMLDivElement>()
 const lowConsensusChartRef = ref<HTMLDivElement>()
 const acceptanceByStaminaChartRef = ref<HTMLDivElement>()
+const careStatusChartRef = ref<HTMLDivElement>()
+const careFailureReasonsChartRef = ref<HTMLDivElement>()
+const carePriorityChartRef = ref<HTMLDivElement>()
 
 let barChart: ECharts | null = null
 let lineChart: ECharts | null = null
 let pieChart: ECharts | null = null
 let lowConsensusChart: ECharts | null = null
 let acceptanceByStaminaChart: ECharts | null = null
+let careStatusChart: ECharts | null = null
+let careFailureReasonsChart: ECharts | null = null
+let carePriorityChart: ECharts | null = null
 
 const overview = reactive<OverviewStats>({
   totalPlans: 0,
@@ -317,6 +465,20 @@ const changeHotspots = ref<ChangeHotspotItem[]>([])
 const lowConsensusReasons = ref<LowConsensusReasonItem[]>([])
 const feedbackAcceptanceByStamina = ref<FeedbackAcceptanceByStaminaItem[]>([])
 const consensusByRoute = ref<ConsensusByRouteItem[]>([])
+const careFailureReasons = ref<CareFailureReasonItem[]>([])
+const carePriorityDistribution = ref<CarePriorityDistributionItem[]>([])
+const carePlanBurden = ref<CarePlanBurdenItem[]>([])
+
+const careTaskStats = reactive<CareTaskStats>({
+  total: 0,
+  completed: 0,
+  pending: 0,
+  inProgress: 0,
+  failed: 0,
+  assigned: 0,
+  completionRate: 0,
+  overdue: 0,
+})
 
 const impactText: Record<string, string> = {
   high: '高影响',
@@ -696,12 +858,254 @@ function initAcceptanceByStaminaChart() {
   acceptanceByStaminaChart.setOption(option)
 }
 
+function initCareStatusChart() {
+  if (!careStatusChartRef.value) return
+  if (careStatusChart) careStatusChart.dispose()
+  careStatusChart = echarts.init(careStatusChartRef.value)
+
+  const statusData = [
+    { name: '已完成', value: careTaskStats.completed, color: '#67C23A' },
+    { name: '进行中', value: careTaskStats.inProgress, color: '#E6A23C' },
+    { name: '已分配', value: careTaskStats.assigned, color: '#409EFF' },
+    { name: '待分配', value: careTaskStats.pending, color: '#909399' },
+    { name: '未完成', value: careTaskStats.failed, color: '#F56C6C' },
+  ].filter((d) => d.value > 0)
+
+  const option = {
+    tooltip: {
+      trigger: 'item',
+      formatter: (params: any) => {
+        return `${params.name}<br/>数量：<b>${params.value} 个</b><br/>占比：${params.percent}%`
+      }
+    },
+    legend: {
+      orient: 'horizontal',
+      bottom: '0%',
+      itemWidth: 16,
+      itemHeight: 16,
+      textStyle: { fontSize: 13, color: '#5A4A42' }
+    },
+    color: statusData.map((d) => d.color),
+    series: [
+      {
+        name: '任务状态',
+        type: 'pie',
+        radius: ['40%', '70%'],
+        center: ['50%', '42%'],
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 10,
+          borderColor: '#FFFFFF',
+          borderWidth: 3
+        },
+        label: {
+          show: true,
+          fontSize: 13,
+          fontWeight: 600,
+          formatter: '{b}\n{d}%',
+          color: '#5A4A42'
+        },
+        emphasis: {
+          label: {
+            show: true,
+            fontSize: 16,
+            fontWeight: 700
+          },
+          itemStyle: {
+            shadowBlur: 12,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(232, 133, 90, 0.4)'
+          }
+        },
+        labelLine: {
+          show: true,
+          length: 12,
+          length2: 8
+        },
+        data: statusData
+      }
+    ]
+  }
+  careStatusChart.setOption(option)
+}
+
+function initCareFailureReasonsChart() {
+  if (!careFailureReasonsChartRef.value) return
+  if (careFailureReasonsChart) careFailureReasonsChart.dispose()
+  careFailureReasonsChart = echarts.init(careFailureReasonsChartRef.value)
+
+  const data = careFailureReasons.value.length ? careFailureReasons.value : [
+    { reason: '暂无数据', count: 0, percentage: 0 }
+  ]
+
+  const option = {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter: (params: any) => {
+        const d = params[0]
+        const item = careFailureReasons.value[d.dataIndex]
+        return `${d.name}<br/>出现次数：<b style="color: ${COLOR_PRIMARY}">${d.value} 次</b><br/>占比：<b>${item?.percentage || 0}%</b>`
+      }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: '10%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: data.map((d) => d.reason),
+      axisLabel: {
+        fontSize: 12,
+        color: '#5A4A42',
+        interval: 0,
+        rotate: 20,
+        width: 100,
+        overflow: 'truncate'
+      },
+      axisLine: { lineStyle: { color: '#F0D9C7' } }
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: {
+        fontSize: 13,
+        color: '#5A4A42',
+        formatter: '{value}次'
+      },
+      axisLine: { lineStyle: { color: '#F0D9C7' } },
+      splitLine: { lineStyle: { color: '#F0D9C7', type: 'dashed' } }
+    },
+    series: [
+      {
+        name: '出现次数',
+        type: 'bar',
+        barWidth: '50%',
+        data: data.map((d) => d.count),
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: '#F56C6C' },
+            { offset: 1, color: '#E8855A' }
+          ]),
+          borderRadius: [8, 8, 0, 0]
+        },
+        label: {
+          show: true,
+          position: 'top',
+          formatter: '{c}次',
+          fontSize: 12,
+          fontWeight: 600,
+          color: '#F56C6C'
+        }
+      }
+    ]
+  }
+  careFailureReasonsChart.setOption(option)
+}
+
+function initCarePriorityChart() {
+  if (!carePriorityChartRef.value) return
+  if (carePriorityChart) carePriorityChart.dispose()
+  carePriorityChart = echarts.init(carePriorityChartRef.value)
+
+  const priorityText: Record<string, string> = {
+    critical: '紧急',
+    high: '高',
+    medium: '中',
+    low: '低'
+  }
+
+  const data = carePriorityDistribution.value.length
+    ? carePriorityDistribution.value
+    : [
+        { priority: 'critical', count: 0, completed: 0 },
+        { priority: 'high', count: 0, completed: 0 },
+        { priority: 'medium', count: 0, completed: 0 },
+        { priority: 'low', count: 0, completed: 0 },
+      ]
+
+  const option = {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter: (params: any) => {
+        const completed = params[0]
+        const uncompleted = params[1]
+        const total = completed.value + uncompleted.value
+        const rate = total > 0 ? Math.round((completed.value / total) * 100) : 0
+        return `${completed.name}<br/>总数：<b>${total} 个</b><br/>已完成：<b>${completed.value} 个</b><br/>未完成：<b>${uncompleted.value} 个</b><br/>完成率：<b>${rate}%</b>`
+      }
+    },
+    legend: {
+      data: ['已完成', '未完成'],
+      top: '0%',
+      textStyle: { fontSize: 13, color: '#5A4A42' }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: '15%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: data.map((d) => priorityText[d.priority] || d.priority),
+      axisLabel: {
+        fontSize: 14,
+        color: '#5A4A42'
+      },
+      axisLine: { lineStyle: { color: '#F0D9C7' } }
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: {
+        fontSize: 13,
+        color: '#5A4A42',
+        formatter: '{value}个'
+      },
+      axisLine: { lineStyle: { color: '#F0D9C7' } },
+      splitLine: { lineStyle: { color: '#F0D9C7', type: 'dashed' } }
+    },
+    series: [
+      {
+        name: '已完成',
+        type: 'bar',
+        stack: 'total',
+        barWidth: '45%',
+        data: data.map((d) => d.completed),
+        itemStyle: {
+          color: '#67C23A',
+          borderRadius: [0, 0, 0, 0]
+        }
+      },
+      {
+        name: '未完成',
+        type: 'bar',
+        stack: 'total',
+        barWidth: '45%',
+        data: data.map((d) => d.count - d.completed),
+        itemStyle: {
+          color: '#F0D9C7',
+          borderRadius: [8, 8, 0, 0]
+        }
+      }
+    ]
+  }
+  carePriorityChart.setOption(option)
+}
+
 function resizeCharts() {
   barChart?.resize()
   lineChart?.resize()
   pieChart?.resize()
   lowConsensusChart?.resize()
   acceptanceByStaminaChart?.resize()
+  careStatusChart?.resize()
+  careFailureReasonsChart?.resize()
+  carePriorityChart?.resize()
 }
 
 async function fetchAllStatistics() {
@@ -713,6 +1117,7 @@ async function fetchAllStatistics() {
       if (data) {
         Object.assign(overview, data.overview)
         Object.assign(consensusStats, data.consensusStats)
+        Object.assign(careTaskStats, data.careTaskStats)
         routeCompletionRates.value = data.routeCompletionRates || []
         peakHourDistribution.value = data.peakHourDistribution || []
         satisfactionByStamina.value = data.satisfactionByStamina || []
@@ -720,11 +1125,14 @@ async function fetchAllStatistics() {
         lowConsensusReasons.value = data.lowConsensusReasons || []
         feedbackAcceptanceByStamina.value = data.feedbackAcceptanceByStamina || []
         consensusByRoute.value = data.consensusByRoute || []
+        careFailureReasons.value = data.careFailureReasons || []
+        carePriorityDistribution.value = data.carePriorityDistribution || []
+        carePlanBurden.value = data.carePlanBurden || []
       } else {
         throw new Error('no all')
       }
     } catch {
-      const [ov, cs, rc, ph, sa, ch, lcr, fas, cbr] = await Promise.all([
+      const [ov, cs, rc, ph, sa, ch, lcr, fas, cbr, cts, cfr, cpd, cpb] = await Promise.all([
         getOverview(),
         getConsensusStats(),
         getRouteCompletionRates(),
@@ -733,10 +1141,15 @@ async function fetchAllStatistics() {
         getChangeHotspots(),
         getLowConsensusReasons(),
         getFeedbackAcceptanceByStamina(),
-        getConsensusByRoute()
+        getConsensusByRoute(),
+        getCareTaskStats(),
+        getCareFailureReasons(),
+        getCarePriorityDistribution(),
+        getCarePlanBurden()
       ])
       if (ov.data) Object.assign(overview, ov.data as OverviewStats)
       if (cs.data) Object.assign(consensusStats, cs.data as ConsensusStats)
+      if (cts.data) Object.assign(careTaskStats, cts.data as CareTaskStats)
       routeCompletionRates.value = (rc.data as RouteCompletionItem[]) || []
       peakHourDistribution.value = (ph.data as PeakHourItem[]) || []
       satisfactionByStamina.value = (sa.data as SatisfactionItem[]) || []
@@ -744,6 +1157,9 @@ async function fetchAllStatistics() {
       lowConsensusReasons.value = (lcr.data as LowConsensusReasonItem[]) || []
       feedbackAcceptanceByStamina.value = (fas.data as FeedbackAcceptanceByStaminaItem[]) || []
       consensusByRoute.value = (cbr.data as ConsensusByRouteItem[]) || []
+      careFailureReasons.value = (cfr.data as CareFailureReasonItem[]) || []
+      carePriorityDistribution.value = (cpd.data as CarePriorityDistributionItem[]) || []
+      carePlanBurden.value = (cpb.data as CarePlanBurdenItem[]) || []
     }
 
     await nextTick()
@@ -752,6 +1168,9 @@ async function fetchAllStatistics() {
     initPieChart()
     initLowConsensusChart()
     initAcceptanceByStaminaChart()
+    initCareStatusChart()
+    initCareFailureReasonsChart()
+    initCarePriorityChart()
   } catch (e) {
     console.error(e)
   } finally {
@@ -771,5 +1190,8 @@ onBeforeUnmount(() => {
   pieChart?.dispose()
   lowConsensusChart?.dispose()
   acceptanceByStaminaChart?.dispose()
+  careStatusChart?.dispose()
+  careFailureReasonsChart?.dispose()
+  carePriorityChart?.dispose()
 })
 </script>

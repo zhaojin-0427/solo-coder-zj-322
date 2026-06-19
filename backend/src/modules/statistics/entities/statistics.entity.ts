@@ -135,3 +135,68 @@ export class ConsensusByRouteItem {
   @ApiProperty({ description: '是否强制发布' })
   isForced: boolean;
 }
+
+export class CareTaskStats {
+  @ApiProperty({ description: '任务总数' })
+  total: number;
+
+  @ApiProperty({ description: '已完成数量' })
+  completed: number;
+
+  @ApiProperty({ description: '待分配数量' })
+  pending: number;
+
+  @ApiProperty({ description: '进行中数量' })
+  inProgress: number;
+
+  @ApiProperty({ description: '未完成数量' })
+  failed: number;
+
+  @ApiProperty({ description: '已分配数量' })
+  assigned: number;
+
+  @ApiProperty({ description: '完成率（0-100）' })
+  completionRate: number;
+
+  @ApiProperty({ description: '逾期任务数量' })
+  overdue: number;
+}
+
+export class CareFailureReasonItem {
+  @ApiProperty({ description: '未完成原因' })
+  reason: string;
+
+  @ApiProperty({ description: '出现次数' })
+  count: number;
+
+  @ApiProperty({ description: '占比（0-100）' })
+  percentage: number;
+}
+
+export class CarePriorityDistributionItem {
+  @ApiProperty({ description: '优先级' })
+  priority: string;
+
+  @ApiProperty({ description: '任务数量' })
+  count: number;
+
+  @ApiProperty({ description: '已完成数量' })
+  completed: number;
+}
+
+export class CarePlanBurdenItem {
+  @ApiProperty({ description: '计划ID' })
+  planId: string;
+
+  @ApiProperty({ description: '计划标题' })
+  planTitle: string;
+
+  @ApiProperty({ description: '任务总数' })
+  taskCount: number;
+
+  @ApiProperty({ description: '紧急任务数' })
+  criticalCount: number;
+
+  @ApiProperty({ description: '高优先级任务数' })
+  highCount: number;
+}

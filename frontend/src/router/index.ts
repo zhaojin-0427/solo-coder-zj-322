@@ -30,6 +30,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '途中变更' }
   },
   {
+    path: '/care-tasks',
+    name: 'CareTasks',
+    component: () => import('@/views/CareTasksView.vue'),
+    meta: { title: '照护分工' }
+  },
+  {
     path: '/statistics',
     name: 'Statistics',
     component: () => import('@/views/StatisticsView.vue'),

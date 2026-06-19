@@ -29,6 +29,10 @@
           <el-icon><Refresh /></el-icon>
           <span>途中变更</span>
         </el-menu-item>
+        <el-menu-item index="/care-tasks">
+          <el-icon><FirstAidKit /></el-icon>
+          <span>照护分工</span>
+        </el-menu-item>
         <el-menu-item index="/statistics">
           <el-icon><DataAnalysis /></el-icon>
           <span>数据统计</span>
@@ -59,6 +63,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import {
+  Sunny,
+  Calendar,
+  User,
+  Guide,
+  Refresh,
+  DataAnalysis,
+  FirstAidKit
+} from '@element-plus/icons-vue'
 
 const route = useRoute()
 
@@ -69,6 +82,7 @@ const titleMap: Record<string, string> = {
   '/preferences': '长辈节奏偏好登记',
   '/routes': '路线协商与推荐',
   '/changes': '途中变更记录',
+  '/care-tasks': '照护分工与物品确认',
   '/statistics': '数据统计分析'
 }
 

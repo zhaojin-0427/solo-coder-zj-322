@@ -1,4 +1,5 @@
 import type { StaminaLevel } from './feedbacks'
+import type { CareTaskStats, CareFailureReasonItem, CarePriorityDistributionItem, CarePlanBurdenItem } from './care-tasks'
 
 export interface OverviewStats {
   totalPlans: number
@@ -69,4 +70,8 @@ export interface StatisticsData {
   lowConsensusReasons: LowConsensusReasonItem[]
   feedbackAcceptanceByStamina: FeedbackAcceptanceByStaminaItem[]
   consensusByRoute: ConsensusByRouteItem[]
+  careTaskStats: CareTaskStats
+  careFailureReasons: CareFailureReasonItem[]
+  carePriorityDistribution: CarePriorityDistributionItem[]
+  carePlanBurden: CarePlanBurdenItem[]
 }
