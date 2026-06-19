@@ -359,9 +359,9 @@
 
         <el-form-item label="特殊需求">
           <el-checkbox-group v-model="specialNeeds">
-            <el-checkbox value="sun" label="needSunProtection">需要避晒 ☀️</el-checkbox>
-            <el-checkbox value="cold" label="needColdProtection">需要避冷 ❄️</el-checkbox>
-            <el-checkbox value="toilet" label="needNearToilet">需要靠近厕所 🚻</el-checkbox>
+            <el-checkbox value="needSunProtection">需要避晒 ☀️</el-checkbox>
+            <el-checkbox value="needColdProtection">需要避冷 ❄️</el-checkbox>
+            <el-checkbox value="needNearToilet">需要靠近厕所 🚻</el-checkbox>
           </el-checkbox-group>
         </el-form-item>
 

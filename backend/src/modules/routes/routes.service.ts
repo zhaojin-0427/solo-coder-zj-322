@@ -123,9 +123,14 @@ export class RoutesService {
     return this.enrichRouteWithConsensus(route);
   }
 
+  findRawByPlanId(planId: string): Route[] {
+    return this.routes.filter((r) => r.planId === planId);
+  }
+
   findByPlanId(planId: string): Route[] {
-    const routes = this.routes.filter((r) => r.planId === planId);
+    const routes = this.findRawByPlanId(planId);
     try {
+      const rawRouteIds = routes.map((r) => r.id);
       const consensusList = this.feedbacksService.calculatePlanRoutesConsensus(planId);
       return routes.map((r) => {
         const consensus = consensusList.find((c) => c.routeId === r.id);
@@ -312,7 +317,9 @@ export class RoutesService {
   }
 
   findSelected(planId: string): Route | null {
-    return this.routes.find((r) => r.planId === planId && r.isSelected) || null;
+    const raw = this.routes.find((r) => r.planId === planId && r.isSelected);
+    if (!raw) return null;
+    return this.enrichRouteWithConsensus(raw);
   }
 
   getPlanRoutesStats() {

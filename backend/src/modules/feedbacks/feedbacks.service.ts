@@ -318,7 +318,7 @@ export class FeedbacksService {
   }
 
   calculatePlanRoutesConsensus(planId: string): RouteConsensus[] {
-    const routes = this.routesService.findByPlanId(planId);
+    const routes = this.routesService.findRawByPlanId(planId);
     const consensusList = routes.map((route) => this.calculateConsensus(route.id));
 
     consensusList.sort((a, b) => {
