@@ -251,3 +251,90 @@ export class WeatherRiskChangeStatItem {
   @ApiProperty({ description: '平均变更次数/计划' })
   avgChangesPerPlan: number;
 }
+
+export class TopTimeoutNode {
+  @ApiProperty({ description: '排名' })
+  rank: number;
+
+  @ApiProperty({ description: '节点名称' })
+  name: string;
+
+  @ApiProperty({ description: '异常发生次数' })
+  count: number;
+
+  @ApiProperty({ description: '所属计划ID' })
+  planId: string;
+}
+
+export class PlanExceptionDistribution {
+  @ApiProperty({ description: '计划ID' })
+  planId: string;
+
+  @ApiProperty({ description: '计划标题' })
+  planTitle: string;
+
+  @ApiProperty({ description: '总签到数' })
+  totalCheckins: number;
+
+  @ApiProperty({ description: '迟到次数' })
+  lateCount: number;
+
+  @ApiProperty({ description: '未到次数' })
+  noShowCount: number;
+
+  @ApiProperty({ description: '提前离开次数' })
+  earlyLeaveCount: number;
+
+  @ApiProperty({ description: '超时次数' })
+  timeoutCount: number;
+
+  @ApiProperty({ description: '总异常数' })
+  totalExceptions: number;
+}
+
+export class CheckinStatistics {
+  @ApiProperty({ description: '总成功签到数' })
+  totalChecked: number;
+
+  @ApiProperty({ description: '总漏签到数' })
+  totalMissed: number;
+
+  @ApiProperty({ description: '准时签到数' })
+  onTimeCount: number;
+
+  @ApiProperty({ description: '准时签到率（0-100）' })
+  onTimeRate: number;
+
+  @ApiProperty({ description: '迟到次数' })
+  lateCount: number;
+
+  @ApiProperty({ description: '未到次数' })
+  noShowCount: number;
+
+  @ApiProperty({ description: '提前离开次数' })
+  earlyLeaveCount: number;
+
+  @ApiProperty({ type: [TopTimeoutNode], description: '超时/异常高发节点TOP' })
+  topTimeoutNodes: TopTimeoutNode[];
+
+  @ApiProperty({ description: '家属通知总数' })
+  totalNotifications: number;
+
+  @ApiProperty({ description: '已确认收到通知数' })
+  confirmedCount: number;
+
+  @ApiProperty({ description: '已发送通知数' })
+  notifiedCount: number;
+
+  @ApiProperty({ description: '待发送通知数' })
+  pendingCount: number;
+
+  @ApiProperty({ description: '家属通知确认率（0-100）' })
+  notificationConfirmRate: number;
+
+  @ApiProperty({ description: '家属通知发送率（0-100）' })
+  notificationSentRate: number;
+
+  @ApiProperty({ type: [PlanExceptionDistribution], description: '不同计划的签到异常分布' })
+  exceptionByPlan: PlanExceptionDistribution[];
+}

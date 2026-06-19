@@ -6,6 +6,7 @@ import { ChangesService } from '../changes/changes.service';
 import { FeedbacksService } from '../feedbacks/feedbacks.service';
 import { CareTasksService } from '../care-tasks/care-tasks.service';
 import { HealthWeatherService } from '../health-weather/health-weather.service';
+import { CheckinsService } from '../checkins/checkins.service';
 import { StaminaLevel } from '../preferences/entities/preference.entity';
 import {
   OverviewStatistics,
@@ -23,6 +24,7 @@ import {
   HealthReminderStats,
   HealthConcernStatItem,
   WeatherRiskChangeStatItem,
+  CheckinStatistics,
 } from './entities/statistics.entity';
 
 @Injectable()
@@ -35,6 +37,7 @@ export class StatisticsService {
     private readonly feedbacksService: FeedbacksService,
     private readonly careTasksService: CareTasksService,
     private readonly healthWeatherService: HealthWeatherService,
+    private readonly checkinsService: CheckinsService,
   ) {}
 
   getOverview(): OverviewStatistics {
@@ -294,6 +297,10 @@ export class StatisticsService {
     }));
   }
 
+  getCheckinStats(): CheckinStatistics {
+    return this.checkinsService.getCheckinStatistics();
+  }
+
   getAll() {
     const ov = this.getOverview();
     const overview = {
@@ -302,6 +309,7 @@ export class StatisticsService {
       averageRestCount: ov.avgRestCount,
       totalChanges: ov.totalChanges,
     };
+    const checkinStats = this.getCheckinStats();
     return {
       overview,
       routeCompletionRates: this.getRouteCompletion(),
@@ -319,6 +327,7 @@ export class StatisticsService {
       healthReminderStats: this.getHealthReminderStats(),
       topHealthConcerns: this.getTopHealthConcerns(),
       weatherRiskChangeDistribution: this.getWeatherRiskChangeDistribution(),
+      checkinStats,
     };
   }
 }

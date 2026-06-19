@@ -49,6 +49,59 @@
       </div>
     </div>
 
+    <div
+      v-if="selectedPlanId && checkinExceptionSummary && checkinExceptionSummary.totalExceptions > 0"
+      style="margin-bottom: 20px; padding: 18px 20px; border-radius: 14px; background: linear-gradient(135deg, #FEF0F0 0%, #FFF8F2 100%); border: 1px solid #FCD7D7;"
+    >
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px">
+        <div style="font-size: 17px; font-weight: 700; color: #5A4A42">
+          <el-icon :size="20" color="#F56C6C" style="margin-right: 6px"><WarningFilled /></el-icon>
+          签到异常与家属通知摘要
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap">
+          <el-tag type="danger" effect="dark" size="large">
+            总异常 {{ checkinExceptionSummary.totalExceptions }} 条
+          </el-tag>
+          <el-tag type="warning" effect="light" size="large" v-if="checkinExceptionSummary.timeoutCount > 0">
+            超时 {{ checkinExceptionSummary.timeoutCount }}
+          </el-tag>
+          <el-tag type="warning" effect="light" size="large" v-if="checkinExceptionSummary.lateCount > 0">
+            迟到 {{ checkinExceptionSummary.lateCount }}
+          </el-tag>
+          <el-tag type="warning" effect="light" size="large" v-if="checkinExceptionSummary.earlyLeaveCount > 0">
+            提前离开 {{ checkinExceptionSummary.earlyLeaveCount }}
+          </el-tag>
+          <el-tag type="info" effect="dark" size="large">
+            家属通知 {{ checkinExceptionSummary.totalNotifications }}
+            <template v-if="checkinExceptionSummary.pendingNotifications > 0">
+              · 待发{{ checkinExceptionSummary.pendingNotifications }}
+            </template>
+            <template v-if="checkinExceptionSummary.unconfirmedNotifications > 0">
+              · 待确认{{ checkinExceptionSummary.unconfirmedNotifications }}
+            </template>
+          </el-tag>
+        </div>
+      </div>
+
+      <div v-if="checkinExceptionSummary.eldersWithExceptions.length > 0" style="margin-bottom: 10px">
+        <div style="font-size: 13px; color: #8a7a72; margin-bottom: 6px">涉及长辈：</div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap">
+          <el-tag
+            v-for="e in checkinExceptionSummary.eldersWithExceptions"
+            :key="e"
+            effect="light"
+            type="danger"
+          >{{ e }}</el-tag>
+        </div>
+      </div>
+
+      <div style="text-align: right">
+        <el-button type="danger" size="default" :icon="Location" @click="goToNodeCheckins()">
+          前往节点签到页查看详情
+        </el-button>
+      </div>
+    </div>
+
     <el-card v-loading="loading">
       <div v-if="!selectedPlanId">
         <el-empty description="请先选择一个出行计划查看变更记录" :image-size="120" />
@@ -269,6 +322,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, type FormInstance, type Component } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Plus,
@@ -282,7 +336,8 @@ import {
   Location,
   MoreFilled,
   Right,
-  Guide
+  Guide,
+  WarningFilled,
 } from '@element-plus/icons-vue'
 import { getAllPlans } from '@/api/plans'
 import {
@@ -291,7 +346,10 @@ import {
   updateChange,
   deleteChange
 } from '@/api/changes'
-import type { TravelPlan, TravelChange, TravelChangeForm, ChangeType } from '@/types'
+import { checkinsApi } from '@/api'
+import type { TravelPlan, TravelChange, TravelChangeForm, ChangeType, PlanExceptionSummary } from '@/types'
+
+const router = useRouter()
 
 const loading = ref(false)
 const submitting = ref(false)
@@ -299,6 +357,7 @@ const planOptions = ref<TravelPlan[]>([])
 const selectedPlanId = ref('')
 const changeList = ref<TravelChange[]>([])
 const filterType = ref('')
+const checkinExceptionSummary = ref<PlanExceptionSummary | null>(null)
 
 const formDialogVisible = ref(false)
 const isEditMode = ref(false)
@@ -378,19 +437,28 @@ async function fetchPlans() {
 async function fetchChanges() {
   if (!selectedPlanId.value) {
     changeList.value = []
+    checkinExceptionSummary.value = null
     return
   }
   loading.value = true
   try {
-    const res = await getChangesByPlanId(selectedPlanId.value)
-    changeList.value = ((res.data as TravelChange[]) || []).sort(
+    const [changeRes, checkinSumRes] = await Promise.all([
+      getChangesByPlanId(selectedPlanId.value),
+      checkinsApi.getPlanExceptionSummary(selectedPlanId.value).catch(() => ({ data: null })),
+    ])
+    changeList.value = ((changeRes.data as TravelChange[]) || []).sort(
       (a, b) => new Date(b.changeTime).getTime() - new Date(a.changeTime).getTime()
     )
+    checkinExceptionSummary.value = (checkinSumRes.data as PlanExceptionSummary) || null
   } catch (e) {
     console.error(e)
   } finally {
     loading.value = false
   }
+}
+
+function goToNodeCheckins() {
+  router.push({ path: '/node-checkins', query: { planId: selectedPlanId.value } })
 }
 
 function resetForm() {

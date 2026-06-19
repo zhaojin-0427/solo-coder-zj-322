@@ -13,6 +13,7 @@ import type {
   HealthReminderStats,
   HealthConcernStatItem,
   WeatherRiskChangeStatItem,
+  CheckinStatistics,
 } from '@/types'
 
 const BASE_URL = '/statistics'
@@ -125,6 +126,13 @@ export function getTopHealthConcerns() {
 export function getWeatherRiskChangeDistribution() {
   return request<WeatherRiskChangeStatItem[]>({
     url: `${BASE_URL}/weather-risk-change-distribution`,
+    method: 'get'
+  })
+}
+
+export function getCheckinStats() {
+  return request<CheckinStatistics>({
+    url: `${BASE_URL}/checkin-stats`,
     method: 'get'
   })
 }

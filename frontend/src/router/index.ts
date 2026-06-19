@@ -42,6 +42,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '出行前提醒' }
   },
   {
+    path: '/node-checkins',
+    name: 'NodeCheckins',
+    component: () => import('@/views/NodeCheckinsView.vue'),
+    meta: { title: '节点签到' }
+  },
+  {
     path: '/statistics',
     name: 'Statistics',
     component: () => import('@/views/StatisticsView.vue'),

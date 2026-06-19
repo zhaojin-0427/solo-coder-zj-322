@@ -8,9 +8,10 @@ import { ChangesModule } from '../changes/changes.module';
 import { FeedbacksModule } from '../feedbacks/feedbacks.module';
 import { CareTasksModule } from '../care-tasks/care-tasks.module';
 import { HealthWeatherModule } from '../health-weather/health-weather.module';
+import { CheckinsModule } from '../checkins/checkins.module';
 
 @Module({
-  imports: [PlansModule, PreferencesModule, RoutesModule, ChangesModule, FeedbacksModule, CareTasksModule, HealthWeatherModule],
+  imports: [PlansModule, PreferencesModule, RoutesModule, ChangesModule, FeedbacksModule, CareTasksModule, HealthWeatherModule, CheckinsModule],
   controllers: [StatisticsController],
   providers: [StatisticsService],
 })

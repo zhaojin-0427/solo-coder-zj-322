@@ -471,6 +471,170 @@
           <div ref="riskLevelPieChartRef" style="height: 360px; width: 100%"></div>
         </div>
       </el-col>
+
+      <el-col :xs="24" :sm="12" :md="6" :lg="6">
+        <div class="stat-card">
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <div>
+              <div class="stat-label">节点准时签到率</div>
+              <div class="stat-value" :style="{ color: checkinStats.onTimeRate >= 80 ? '#67C23A' : '#E6A23C' }">
+                {{ checkinStats.onTimeRate }}<span style="font-size: 18px">%</span>
+              </div>
+            </div>
+            <div class="stat-icon" style="background: #C6E4DD; color: #4A9B8C">
+              <el-icon :size="32"><CircleCheck /></el-icon>
+            </div>
+          </div>
+          <div style="margin-top: 10px; font-size: 12px; color: #8B7B73">
+            准时 {{ checkinStats.onTimeCount }} / 完成 {{ checkinStats.totalChecked }}
+          </div>
+        </div>
+      </el-col>
+
+      <el-col :xs="24" :sm="12" :md="6" :lg="6">
+        <div class="stat-card">
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <div>
+              <div class="stat-label">签到异常总数</div>
+              <div class="stat-value" style="color: #F56C6C">
+                {{ checkinStats.lateCount + checkinStats.noShowCount + checkinStats.earlyLeaveCount }}<span style="font-size: 18px">次</span>
+              </div>
+            </div>
+            <div class="stat-icon" style="background: #FDE2E2; color: #F56C6C">
+              <el-icon :size="32"><WarningFilled /></el-icon>
+            </div>
+          </div>
+          <div style="margin-top: 10px; font-size: 12px; color: #8B7B73">
+            迟到{{ checkinStats.lateCount }} · 未到{{ checkinStats.noShowCount }} · 早离{{ checkinStats.earlyLeaveCount }}
+          </div>
+        </div>
+      </el-col>
+
+      <el-col :xs="24" :sm="12" :md="6" :lg="6">
+        <div class="stat-card">
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <div>
+              <div class="stat-label">家属通知发送率</div>
+              <div class="stat-value" :style="{ color: checkinStats.notificationSentRate >= 80 ? '#67C23A' : '#E6A23C' }">
+                {{ checkinStats.notificationSentRate }}<span style="font-size: 18px">%</span>
+              </div>
+            </div>
+            <div class="stat-icon" style="background: #D9ECFF; color: #409EFF">
+              <el-icon :size="32"><Bell /></el-icon>
+            </div>
+          </div>
+          <div style="margin-top: 10px; font-size: 12px; color: #8B7B73">
+            已发 {{ checkinStats.confirmedCount + checkinStats.notifiedCount }} / 共 {{ checkinStats.totalNotifications }}
+          </div>
+        </div>
+      </el-col>
+
+      <el-col :xs="24" :sm="12" :md="6" :lg="6">
+        <div class="stat-card">
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <div>
+              <div class="stat-label">家属通知确认率</div>
+              <div class="stat-value" :style="{ color: checkinStats.notificationConfirmRate >= 70 ? '#67C23A' : '#E6A23C' }">
+                {{ checkinStats.notificationConfirmRate }}<span style="font-size: 18px">%</span>
+              </div>
+            </div>
+            <div class="stat-icon" style="background: #E1F3D9; color: #67C23A">
+              <el-icon :size="32"><CircleCheckFilled /></el-icon>
+            </div>
+          </div>
+          <div style="margin-top: 10px; font-size: 12px; color: #8B7B73">
+            已确认 {{ checkinStats.confirmedCount }} · 待确认 {{ checkinStats.notifiedCount }} · 待发 {{ checkinStats.pendingCount }}
+          </div>
+        </div>
+      </el-col>
+
+      <el-col :xs="24" :lg="12">
+        <div class="chart-container">
+          <div class="chart-title">
+            <el-icon style="color: #E8855A; margin-right: 6px"><Location /></el-icon>
+            超时/异常高发节点 TOP{{ checkinStats.topTimeoutNodes.length }}
+          </div>
+          <div ref="timeoutNodesChartRef" style="height: 360px; width: 100%"></div>
+        </div>
+      </el-col>
+
+      <el-col :xs="24" :lg="12">
+        <div class="chart-container">
+          <div class="chart-title">
+            <el-icon style="color: #E8855A; margin-right: 6px"><PieChart /></el-icon>
+            家属通知状态分布
+          </div>
+          <div ref="notificationStatusChartRef" style="height: 360px; width: 100%"></div>
+        </div>
+      </el-col>
+
+      <el-col :xs="24" :lg="12">
+        <div class="chart-container">
+          <div class="chart-title">
+            <el-icon style="color: #E8855A; margin-right: 6px"><Histogram /></el-icon>
+            签到异常类型分布
+          </div>
+          <div ref="checkinExceptionTypeChartRef" style="height: 360px; width: 100%"></div>
+        </div>
+      </el-col>
+
+      <el-col :xs="24" :lg="12">
+        <div class="chart-container">
+          <div class="chart-title">
+            <el-icon style="color: #E8855A; margin-right: 6px"><DataAnalysis /></el-icon>
+            各计划签到异常分布
+          </div>
+          <el-table :data="checkinStats.exceptionByPlan" stripe border size="large" style="width: 100%">
+            <el-table-column type="index" label="排名" width="70" align="center">
+              <template #default="{ $index }">
+                <el-tag
+                  v-if="$index < 3 && row.totalExceptions > 0"
+                  :type="['danger', 'warning', 'warning'][$index]"
+                  effect="dark"
+                  size="large"
+                >
+                  TOP {{ $index + 1 }}
+                </el-tag>
+                <span v-else style="font-weight: 600">{{ $index + 1 }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="planTitle" label="计划名称" min-width="160" />
+            <el-table-column label="签到总数" width="90" align="center">
+              <template #default="{ row }">
+                <el-tag type="primary" effect="light" size="large">{{ row.totalCheckins }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="异常总数" width="90" align="center">
+              <template #default="{ row }">
+                <el-tag v-if="row.totalExceptions > 0" type="danger" effect="dark" size="large">
+                  {{ row.totalExceptions }}
+                </el-tag>
+                <span v-else style="color: #909399">0</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="迟到" width="70" align="center">
+              <template #default="{ row }">
+                <span :class="row.lateCount > 0 ? 'text-danger' : ''">{{ row.lateCount }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="未到" width="70" align="center">
+              <template #default="{ row }">
+                <span :class="row.noShowCount > 0 ? 'text-danger' : ''">{{ row.noShowCount }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="提前离" width="80" align="center">
+              <template #default="{ row }">
+                <span :class="row.earlyLeaveCount > 0 ? 'text-warning' : ''">{{ row.earlyLeaveCount }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="超时" width="70" align="center">
+              <template #default="{ row }">
+                <span :class="row.timeoutCount > 0 ? 'text-danger' : ''">{{ row.timeoutCount }}</span>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </el-col>
     </el-row>
   </div>
 </template>
@@ -497,6 +661,7 @@ import {
   FirstAidKit,
   Bell,
   Sunny,
+  Location,
 } from '@element-plus/icons-vue'
 import {
   getAllStatistics,
@@ -516,6 +681,7 @@ import {
   getHealthReminderStats,
   getTopHealthConcerns,
   getWeatherRiskChangeDistribution,
+  getCheckinStats,
 } from '@/api/statistics'
 import type {
   OverviewStats,
@@ -535,6 +701,7 @@ import type {
   HealthReminderStats,
   HealthConcernStatItem,
   WeatherRiskChangeStatItem,
+  CheckinStatistics,
 } from '@/types'
 
 const loading = ref(false)
@@ -549,6 +716,9 @@ const carePriorityChartRef = ref<HTMLDivElement>()
 const healthConcernChartRef = ref<HTMLDivElement>()
 const weatherRiskChangeChartRef = ref<HTMLDivElement>()
 const riskLevelPieChartRef = ref<HTMLDivElement>()
+const timeoutNodesChartRef = ref<HTMLDivElement>()
+const notificationStatusChartRef = ref<HTMLDivElement>()
+const checkinExceptionTypeChartRef = ref<HTMLDivElement>()
 
 let barChart: ECharts | null = null
 let lineChart: ECharts | null = null
@@ -561,6 +731,9 @@ let carePriorityChart: ECharts | null = null
 let healthConcernChart: ECharts | null = null
 let weatherRiskChangeChart: ECharts | null = null
 let riskLevelPieChart: ECharts | null = null
+let timeoutNodesChart: ECharts | null = null
+let notificationStatusChart: ECharts | null = null
+let checkinExceptionTypeChart: ECharts | null = null
 
 const overview = reactive<OverviewStats>({
   totalPlans: 0,
@@ -611,6 +784,24 @@ const healthReminderStats = reactive<HealthReminderStats>({
 })
 const topHealthConcerns = ref<HealthConcernStatItem[]>([])
 const weatherRiskChangeDistribution = ref<WeatherRiskChangeStatItem[]>([])
+
+const checkinStats = reactive<CheckinStatistics>({
+  totalChecked: 0,
+  totalMissed: 0,
+  onTimeCount: 0,
+  onTimeRate: 0,
+  lateCount: 0,
+  noShowCount: 0,
+  earlyLeaveCount: 0,
+  topTimeoutNodes: [],
+  totalNotifications: 0,
+  confirmedCount: 0,
+  notifiedCount: 0,
+  pendingCount: 0,
+  notificationConfirmRate: 0,
+  notificationSentRate: 0,
+  exceptionByPlan: [],
+})
 
 const impactText: Record<string, string> = {
   high: '高影响',
@@ -1241,6 +1432,9 @@ function resizeCharts() {
   healthConcernChart?.resize()
   weatherRiskChangeChart?.resize()
   riskLevelPieChart?.resize()
+  timeoutNodesChart?.resize()
+  notificationStatusChart?.resize()
+  checkinExceptionTypeChart?.resize()
 }
 
 function initHealthConcernChart() {
@@ -1529,6 +1723,224 @@ function initRiskLevelPieChart() {
   riskLevelPieChart.setOption(option)
 }
 
+function renderTimeoutNodesChart() {
+  if (!timeoutNodesChartRef.value) return
+  if (timeoutNodesChart) timeoutNodesChart.dispose()
+  timeoutNodesChart = echarts.init(timeoutNodesChartRef.value)
+
+  const nodes = checkinStats.topTimeoutNodes && checkinStats.topTimeoutNodes.length > 0
+    ? checkinStats.topTimeoutNodes
+    : [{ rank: 1, name: '暂无数据', count: 0, planId: '' }]
+
+  const option = {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter: (params: any) => {
+        const node = nodes[params[0].dataIndex]
+        return `<b>${params[0].name}</b><br/>异常：<b style="color: #F56C6C">${node.count}</b> 次`
+      }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: '8%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'value',
+      axisLabel: { fontSize: 12, color: '#5A4A42' },
+      axisLine: { lineStyle: { color: '#F0D9C7' } },
+      splitLine: { lineStyle: { color: '#F0D9C7', type: 'dashed' } }
+    },
+    yAxis: {
+      type: 'category',
+      data: nodes.map((n) => n.name),
+      inverse: true,
+      axisLabel: { fontSize: 13, color: '#5A4A42' },
+      axisLine: { lineStyle: { color: '#F0D9C7' } }
+    },
+    series: [
+      {
+        name: '异常次数',
+        type: 'bar',
+        barWidth: '55%',
+        data: nodes.map((n) => n.count),
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+            { offset: 0, color: '#F56C6C' },
+            { offset: 1, color: '#E6A23C' }
+          ]),
+          borderRadius: [0, 6, 6, 0]
+        },
+        label: {
+          show: true,
+          position: 'right',
+          color: '#E8855A',
+          fontWeight: 600,
+          formatter: (params: any) => {
+            const node = nodes[params.dataIndex]
+            return node.count > 0 ? `${node.count} 次` : ''
+          }
+        }
+      }
+    ]
+  }
+  timeoutNodesChart.setOption(option)
+}
+
+function renderNotificationStatusChart() {
+  if (!notificationStatusChartRef.value) return
+  if (notificationStatusChart) notificationStatusChart.dispose()
+  notificationStatusChart = echarts.init(notificationStatusChartRef.value)
+
+  const statusData = [
+    { name: '待通知', value: checkinStats.pendingCount || 0, color: '#909399' },
+    { name: '已通知待确认', value: checkinStats.notifiedCount || 0, color: '#409EFF' },
+    { name: '家属已确认', value: checkinStats.confirmedCount || 0, color: '#67C23A' },
+  ]
+  const total = statusData.reduce((s, d) => s + d.value, 0)
+  if (total === 0) {
+    statusData[0].value = 1
+  }
+
+  const option = {
+    tooltip: {
+      trigger: 'item',
+      formatter: (params: any) => {
+        return `${params.name}<br/>数量：<b>${params.value}</b> 条<br/>占比：${params.percent}%`
+      }
+    },
+    legend: {
+      orient: 'horizontal',
+      bottom: '0%',
+      itemWidth: 16,
+      itemHeight: 16,
+      textStyle: { fontSize: 13, color: '#5A4A42' }
+    },
+    title: {
+      text: `共 ${checkinStats.totalNotifications || 0} 条`,
+      left: 'center',
+      top: '38%',
+      textStyle: { fontSize: 14, color: '#8B7B73', fontWeight: 400 },
+      subtext: checkinStats.notificationConfirmRate !== undefined ? `确认率 ${checkinStats.notificationConfirmRate}%` : '',
+      subtextStyle: { fontSize: 18, color: '#E8855A', fontWeight: 700 }
+    },
+    series: [
+      {
+        name: '通知状态',
+        type: 'pie',
+        radius: ['45%', '72%'],
+        center: ['50%', '40%'],
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 10,
+          borderColor: '#FFFFFF',
+          borderWidth: 3
+        },
+        label: {
+          show: true,
+          fontSize: 13,
+          fontWeight: 600,
+          formatter: '{b}\n{d}%',
+          color: '#5A4A42'
+        },
+        emphasis: {
+          label: { show: true, fontSize: 16, fontWeight: 700 },
+          itemStyle: { shadowBlur: 12, shadowOffsetX: 0, shadowColor: 'rgba(232, 133, 90, 0.4)' }
+        },
+        labelLine: { show: true, length: 12, length2: 8 },
+        data: statusData.filter((d) => d.value > 0).map((d) => ({
+          name: d.name,
+          value: d.value,
+          itemStyle: { color: d.color }
+        }))
+      }
+    ]
+  }
+  notificationStatusChart.setOption(option)
+}
+
+function renderCheckinExceptionTypeChart() {
+  if (!checkinExceptionTypeChartRef.value) return
+  if (checkinExceptionTypeChart) checkinExceptionTypeChart.dispose()
+  checkinExceptionTypeChart = echarts.init(checkinExceptionTypeChartRef.value)
+
+  const categories = ['准时签到', '迟到', '未到', '提前离开', '超时未签']
+  const values = [
+    checkinStats.onTimeCount || 0,
+    checkinStats.lateCount || 0,
+    checkinStats.noShowCount || 0,
+    checkinStats.earlyLeaveCount || 0,
+    checkinStats.timeoutCount || 0,
+  ]
+  const colors = ['#67C23A', '#E6A23C', '#F56C6C', '#B37FEB', '#F56C6C']
+  const total = values.reduce((s, v) => s + v, 0)
+
+  const option = {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter: (params: any) => {
+        const d = params[0]
+        const pct = total > 0 ? ((d.value / total) * 100).toFixed(1) : 0
+        return `${d.name}<br/>次数：<b>${d.value}</b><br/>占比：<b>${pct}%</b>`
+      }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: '10%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: categories,
+      axisLabel: { fontSize: 13, color: '#5A4A42', interval: 0 },
+      axisLine: { lineStyle: { color: '#F0D9C7' } }
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: { fontSize: 12, color: '#5A4A42' },
+      axisLine: { lineStyle: { color: '#F0D9C7' } },
+      splitLine: { lineStyle: { color: '#F0D9C7', type: 'dashed' } }
+    },
+    series: [
+      {
+        name: '次数',
+        type: 'bar',
+        barWidth: '55%',
+        data: values.map((v, i) => ({
+          value: v,
+          itemStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: colors[i] + 'EE' },
+              { offset: 1, color: colors[i] + '99' }
+            ]),
+            borderRadius: [8, 8, 0, 0]
+          }
+        })),
+        label: {
+          show: true,
+          position: 'top',
+          formatter: (p: any) => {
+            if (p.value === 0) return ''
+            const pct = total > 0 ? ((p.value / total) * 100).toFixed(0) : 0
+            return `${p.value}\n${pct}%`
+          },
+          fontSize: 12,
+          fontWeight: 600,
+          color: '#5A4A42',
+          lineHeight: 18
+        }
+      }
+    ]
+  }
+  checkinExceptionTypeChart.setOption(option)
+}
+
 async function fetchAllStatistics() {
   loading.value = true
   try {
@@ -1552,11 +1964,12 @@ async function fetchAllStatistics() {
         if (data.healthReminderStats) Object.assign(healthReminderStats, data.healthReminderStats)
         topHealthConcerns.value = data.topHealthConcerns || []
         weatherRiskChangeDistribution.value = data.weatherRiskChangeDistribution || []
+        if (data.checkinStats) Object.assign(checkinStats, data.checkinStats)
       } else {
         throw new Error('no all')
       }
     } catch {
-      const [ov, cs, rc, ph, sa, ch, lcr, fas, cbr, cts, cfr, cpd, cpb, hrs, thc, wrcd] = await Promise.all([
+      const [ov, cs, rc, ph, sa, ch, lcr, fas, cbr, cts, cfr, cpd, cpb, hrs, thc, wrcd, cis] = await Promise.all([
         getOverview(),
         getConsensusStats(),
         getRouteCompletionRates(),
@@ -1572,7 +1985,8 @@ async function fetchAllStatistics() {
         getCarePlanBurden(),
         getHealthReminderStats(),
         getTopHealthConcerns(),
-        getWeatherRiskChangeDistribution()
+        getWeatherRiskChangeDistribution(),
+        getCheckinStats()
       ])
       if (ov.data) Object.assign(overview, ov.data as OverviewStats)
       if (cs.data) Object.assign(consensusStats, cs.data as ConsensusStats)
@@ -1590,6 +2004,7 @@ async function fetchAllStatistics() {
       if (hrs.data) Object.assign(healthReminderStats, hrs.data as HealthReminderStats)
       topHealthConcerns.value = (thc.data as HealthConcernStatItem[]) || []
       weatherRiskChangeDistribution.value = (wrcd.data as WeatherRiskChangeStatItem[]) || []
+      if (cis.data) Object.assign(checkinStats, cis.data as CheckinStatistics)
     }
 
     await nextTick()
@@ -1604,6 +2019,9 @@ async function fetchAllStatistics() {
     initHealthConcernChart()
     initWeatherRiskChangeChart()
     initRiskLevelPieChart()
+    renderTimeoutNodesChart()
+    renderNotificationStatusChart()
+    renderCheckinExceptionTypeChart()
   } catch (e) {
     console.error(e)
   } finally {
@@ -1629,6 +2047,20 @@ onBeforeUnmount(() => {
   healthConcernChart?.dispose()
   weatherRiskChangeChart?.dispose()
   riskLevelPieChart?.dispose()
+  timeoutNodesChart?.dispose()
+  notificationStatusChart?.dispose()
+  checkinExceptionTypeChart?.dispose()
 })
 
 </script>
+
+<style scoped>
+.text-danger {
+  color: #f56c6c;
+  font-weight: 600;
+}
+.text-warning {
+  color: #e6a23c;
+  font-weight: 600;
+}
+</style>

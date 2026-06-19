@@ -141,6 +141,59 @@
       </div>
     </div>
 
+    <div
+      v-if="selectedPlanId && checkinExceptionSummary && checkinExceptionSummary.totalExceptions > 0"
+      style="margin-bottom: 20px; padding: 18px 20px; border-radius: 14px; background: linear-gradient(135deg, #FEF0F0 0%, #FFF8F2 100%); border: 1px solid #FCD7D7;"
+    >
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px">
+        <div style="font-size: 17px; font-weight: 700; color: #5A4A42">
+          <el-icon :size="20" color="#F56C6C" style="margin-right: 6px"><WarningFilled /></el-icon>
+          签到异常与家属通知摘要
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap">
+          <el-tag type="danger" effect="dark" size="large">
+            总异常 {{ checkinExceptionSummary.totalExceptions }} 条
+          </el-tag>
+          <el-tag type="warning" effect="light" size="large" v-if="checkinExceptionSummary.timeoutCount > 0">
+            超时 {{ checkinExceptionSummary.timeoutCount }}
+          </el-tag>
+          <el-tag type="warning" effect="light" size="large" v-if="checkinExceptionSummary.lateCount > 0">
+            迟到 {{ checkinExceptionSummary.lateCount }}
+          </el-tag>
+          <el-tag type="warning" effect="light" size="large" v-if="checkinExceptionSummary.earlyLeaveCount > 0">
+            提前离开 {{ checkinExceptionSummary.earlyLeaveCount }}
+          </el-tag>
+          <el-tag type="info" effect="dark" size="large">
+            家属通知 {{ checkinExceptionSummary.totalNotifications }}
+            <template v-if="checkinExceptionSummary.pendingNotifications > 0">
+              · 待发{{ checkinExceptionSummary.pendingNotifications }}
+            </template>
+            <template v-if="checkinExceptionSummary.unconfirmedNotifications > 0">
+              · 待确认{{ checkinExceptionSummary.unconfirmedNotifications }}
+            </template>
+          </el-tag>
+        </div>
+      </div>
+
+      <div v-if="checkinExceptionSummary.eldersWithExceptions.length > 0" style="margin-bottom: 10px">
+        <div style="font-size: 13px; color: #8a7a72; margin-bottom: 6px">涉及长辈：</div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap">
+          <el-tag
+            v-for="e in checkinExceptionSummary.eldersWithExceptions"
+            :key="e"
+            effect="light"
+            type="danger"
+          >{{ e }}</el-tag>
+        </div>
+      </div>
+
+      <div style="text-align: right">
+        <el-button type="danger" size="default" :icon="Location" @click="goToNodeCheckins()">
+          前往节点签到页查看详情
+        </el-button>
+      </div>
+    </div>
+
     <el-card v-loading="loading">
       <div v-if="!selectedPlanId">
         <el-empty description="请先选择一个出行计划" :image-size="120" />
@@ -614,6 +667,7 @@
 
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted, type FormInstance } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   RefreshLeft,
@@ -645,6 +699,7 @@ import {
   getConsensusThreshold,
 } from '@/api/feedbacks'
 import { getPlanSummary } from '@/api/health-weather'
+import { checkinsApi } from '@/api'
 import type {
   TravelPlan,
   RouteVersion,
@@ -654,7 +709,10 @@ import type {
   StaminaLevel,
   AcceptanceLevel,
   PlanHealthWeatherSummary,
+  PlanExceptionSummary,
 } from '@/types'
+
+const router = useRouter()
 
 const loading = ref(false)
 const generating = ref(false)
@@ -666,6 +724,7 @@ const routeVersions = ref<RouteVersion[]>([])
 const selectedRouteId = ref('')
 const consensusThreshold = ref(70)
 const healthSummary = ref<PlanHealthWeatherSummary | null>(null)
+const checkinExceptionSummary = ref<PlanExceptionSummary | null>(null)
 
 const feedbackDialogVisible = ref(false)
 const feedbackDetailVisible = ref(false)
@@ -759,14 +818,16 @@ async function fetchRoutes() {
   if (!selectedPlanId.value) return
   loading.value = true
   try {
-    const [routeRes, sumRes] = await Promise.all([
+    const [routeRes, sumRes, checkinSumRes] = await Promise.all([
       getRouteVersions(selectedPlanId.value),
       getPlanSummary(selectedPlanId.value).catch(() => ({ data: null })),
+      checkinsApi.getPlanExceptionSummary(selectedPlanId.value).catch(() => ({ data: null })),
     ])
     routeVersions.value = (routeRes.data as RouteVersion[]) || []
     const selected = routeVersions.value.find((r) => r.isSelected)
     if (selected) selectedRouteId.value = selected.id
     healthSummary.value = (sumRes.data as PlanHealthWeatherSummary) || null
+    checkinExceptionSummary.value = (checkinSumRes.data as PlanExceptionSummary) || null
   } catch (e) {
     console.error(e)
   } finally {
@@ -778,7 +839,12 @@ function handlePlanChange() {
   routeVersions.value = []
   selectedRouteId.value = ''
   healthSummary.value = null
+  checkinExceptionSummary.value = null
   fetchRoutes()
+}
+
+function goToNodeCheckins() {
+  router.push({ path: '/node-checkins', query: { planId: selectedPlanId.value } })
 }
 
 async function handleGenerateRoutes() {

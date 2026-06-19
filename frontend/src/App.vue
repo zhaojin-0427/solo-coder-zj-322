@@ -37,6 +37,10 @@
           <el-icon><Bell /></el-icon>
           <span>出行前提醒</span>
         </el-menu-item>
+        <el-menu-item index="/node-checkins">
+          <el-icon><Location /></el-icon>
+          <span>节点签到</span>
+        </el-menu-item>
         <el-menu-item index="/statistics">
           <el-icon><DataAnalysis /></el-icon>
           <span>数据统计</span>
@@ -75,7 +79,8 @@ import {
   Refresh,
   DataAnalysis,
   FirstAidKit,
-  Bell
+  Bell,
+  Location
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -89,6 +94,7 @@ const titleMap: Record<string, string> = {
   '/changes': '途中变更记录',
   '/care-tasks': '照护分工与物品确认',
   '/health-reminders': '出行前健康与天气适配提醒',
+  '/node-checkins': '节点到离签到与家属安心通知',
   '/statistics': '数据统计分析'
 }
 

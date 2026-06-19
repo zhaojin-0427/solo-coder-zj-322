@@ -16,6 +16,7 @@ import {
   HealthReminderStats,
   HealthConcernStatItem,
   WeatherRiskChangeStatItem,
+  CheckinStatistics,
 } from './entities/statistics.entity';
 
 @ApiTags('statistics')
@@ -143,6 +144,13 @@ export class StatisticsController {
   @ApiOkResponse({ type: [WeatherRiskChangeStatItem] })
   getWeatherRiskChangeDistribution(): WeatherRiskChangeStatItem[] {
     return this.statisticsService.getWeatherRiskChangeDistribution();
+  }
+
+  @Get('checkin-stats')
+  @ApiOperation({ summary: '获取节点签到与家属通知统计（准时率、超时高发节点、通知确认率、异常分布等）' })
+  @ApiOkResponse({ type: CheckinStatistics })
+  getCheckinStats(): CheckinStatistics {
+    return this.statisticsService.getCheckinStats();
   }
 
   @Get('all')
