@@ -150,7 +150,9 @@
           <el-table-column prop="taskName" label="任务名称" min-width="160">
             <template #default="{ row }">
               <div style="display: flex; align-items: center; gap: 8px">
-                <el-icon :size="18" :color="getTaskTypeColor(row.taskType)">{{ getTaskTypeIcon(row.taskType) }}</el-icon>
+                <el-icon :size="18" :color="getTaskTypeColor(row.taskType)">
+                  <component :is="getTaskTypeIcon(row.taskType)" />
+                </el-icon>
                 <span style="font-weight: 600; color: #5A4A42">{{ row.taskName }}</span>
               </div>
             </template>
@@ -395,7 +397,10 @@
           <el-descriptions-item v-if="currentTask.claimedAt" label="领取时间">
             {{ formatDateTime(currentTask.claimedAt) }}
           </el-descriptions-item>
-          <el-descriptions-item v-if="currentTask.completedAt" label="完成时间">
+          <el-descriptions-item v-if="currentTask.status === 'completed' && currentTask.completedAt" label="完成时间">
+            {{ formatDateTime(currentTask.completedAt) }}
+          </el-descriptions-item>
+          <el-descriptions-item v-if="currentTask.status === 'failed' && currentTask.completedAt" label="标记未完成时间">
             {{ formatDateTime(currentTask.completedAt) }}
           </el-descriptions-item>
           <el-descriptions-item v-if="currentTask.description" label="任务描述" :span="2">
