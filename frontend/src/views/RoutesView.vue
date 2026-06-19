@@ -42,6 +42,105 @@
       </div>
     </div>
 
+    <div
+      v-if="selectedPlanId && healthSummary"
+      style="margin-bottom: 20px; padding: 18px 20px; border-radius: 14px; background: linear-gradient(135deg, #FFF8F2 0%, #F0FAF7 100%); border: 1px solid #F0D9C7;"
+    >
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px">
+        <div style="font-size: 17px; font-weight: 700; color: #5A4A42">
+          <el-icon :size="20" color="#E8855A" style="margin-right: 6px"><Sunny /></el-icon>
+          健康天气风险摘要
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap">
+          <el-tag
+            v-if="healthSummary.config"
+            :type="healthSummary.config.weatherRiskLevel === 'extreme' ? 'danger' : healthSummary.config.weatherRiskLevel === 'high' ? 'warning' : healthSummary.config.weatherRiskLevel === 'medium' ? 'info' : 'success'"
+            effect="dark"
+            size="large"
+          >
+            天气：{{ { low: '良好', medium: '一般', high: '风险高', extreme: '极端' }[healthSummary.config.weatherRiskLevel] }}
+          </el-tag>
+          <el-tag
+            v-if="healthSummary.hasExtremeRisk"
+            type="danger"
+            effect="dark"
+            size="large"
+          >
+            <el-icon style="margin-right: 2px"><WarningFilled /></el-icon>
+            存在极高风险
+          </el-tag>
+          <el-tag type="primary" effect="plain" size="large">
+            登记率 {{ healthSummary.checkinRate }}% · 确认率 {{ healthSummary.confirmationRate }}%
+          </el-tag>
+        </div>
+      </div>
+
+      <el-row :gutter="16" style="margin-bottom: 10px">
+        <el-col :xs="12" :sm="6" :md="4">
+          <div style="background: #FFFFFF; border-radius: 10px; padding: 10px; text-align: center">
+            <div style="font-size: 12px; color: #8B7B73">应登记</div>
+            <div style="font-size: 22px; font-weight: 700; color: #5A4A42">{{ healthSummary.expectedCheckinCount }}人</div>
+          </div>
+        </el-col>
+        <el-col :xs="12" :sm="6" :md="4">
+          <div style="background: #FFFFFF; border-radius: 10px; padding: 10px; text-align: center">
+            <div style="font-size: 12px; color: #8B7B73">已登记</div>
+            <div style="font-size: 22px; font-weight: 700; color: #4A9B8C">{{ healthSummary.actualCheckinCount }}人</div>
+          </div>
+        </el-col>
+        <el-col :xs="12" :sm="6" :md="4">
+          <div style="background: #FFFFFF; border-radius: 10px; padding: 10px; text-align: center">
+            <div style="font-size: 12px; color: #8B7B73">高风险</div>
+            <div style="font-size: 22px; font-weight: 700; color: #F56C6C">{{ healthSummary.highRiskCount }}人</div>
+          </div>
+        </el-col>
+        <el-col :xs="12" :sm="6" :md="4">
+          <div style="background: #FFFFFF; border-radius: 10px; padding: 10px; text-align: center">
+            <div style="font-size: 12px; color: #8B7B73">中风险</div>
+            <div style="font-size: 22px; font-weight: 700; color: #E6A23C">{{ healthSummary.mediumRiskCount }}人</div>
+          </div>
+        </el-col>
+        <el-col :xs="12" :sm="6" :md="4">
+          <div style="background: #FFFFFF; border-radius: 10px; padding: 10px; text-align: center">
+            <div style="font-size: 12px; color: #8B7B73">建议改短</div>
+            <div style="font-size: 22px; font-weight: 700; color: #409EFF">{{ healthSummary.suggestShortenCount }}人</div>
+          </div>
+        </el-col>
+        <el-col :xs="12" :sm="6" :md="4">
+          <div style="background: #FFFFFF; border-radius: 10px; padding: 10px; text-align: center"
+               v-if="healthSummary.config">
+            <div style="font-size: 12px; color: #8B7B73">出行时段</div>
+            <div style="font-size: 15px; font-weight: 600; color: #5A4A42">{{ healthSummary.config.startTimeSlot }}-{{ healthSummary.config.endTimeSlot }}</div>
+          </div>
+        </el-col>
+      </el-row>
+
+      <div
+        v-if="healthSummary.summarySuggestions && healthSummary.summarySuggestions.length > 0"
+        style="background: #FFFFFF; border-radius: 10px; padding: 10px 14px"
+      >
+        <div style="font-size: 13px; font-weight: 600; color: #F56C6C; margin-bottom: 4px">
+          <el-icon style="margin-right: 2px"><Warning /></el-icon>
+          路线协商注意事项
+        </div>
+        <ul style="margin: 0; padding-left: 20px; line-height: 1.8">
+          <li
+            v-for="(s, i) in healthSummary.summarySuggestions"
+            :key="i"
+            style="font-size: 13px; color: #5A4A42"
+          >
+            {{ s }}
+          </li>
+        </ul>
+      </div>
+      <div
+        v-else
+        style="background: #FFFFFF; border-radius: 10px; padding: 10px 14px; font-size: 13px; color: #909399"
+      >
+        暂无汇总建议，如有高风险长辈将在此提示。
+      </div>
+    </div>
+
     <el-card v-loading="loading">
       <div v-if="!selectedPlanId">
         <el-empty description="请先选择一个出行计划" :image-size="120" />
@@ -530,6 +629,8 @@ import {
   View,
   DataAnalysis,
   InfoFilled,
+  Sunny,
+  WarningFilled,
 } from '@element-plus/icons-vue'
 import { getAllPlans } from '@/api/plans'
 import {
@@ -543,6 +644,7 @@ import {
   publishRoute,
   getConsensusThreshold,
 } from '@/api/feedbacks'
+import { getPlanSummary } from '@/api/health-weather'
 import type {
   TravelPlan,
   RouteVersion,
@@ -551,6 +653,7 @@ import type {
   CreateFeedbackParams,
   StaminaLevel,
   AcceptanceLevel,
+  PlanHealthWeatherSummary,
 } from '@/types'
 
 const loading = ref(false)
@@ -562,6 +665,7 @@ const selectedPlanId = ref('')
 const routeVersions = ref<RouteVersion[]>([])
 const selectedRouteId = ref('')
 const consensusThreshold = ref(70)
+const healthSummary = ref<PlanHealthWeatherSummary | null>(null)
 
 const feedbackDialogVisible = ref(false)
 const feedbackDetailVisible = ref(false)
@@ -655,10 +759,14 @@ async function fetchRoutes() {
   if (!selectedPlanId.value) return
   loading.value = true
   try {
-    const res = await getRouteVersions(selectedPlanId.value)
-    routeVersions.value = (res.data as RouteVersion[]) || []
+    const [routeRes, sumRes] = await Promise.all([
+      getRouteVersions(selectedPlanId.value),
+      getPlanSummary(selectedPlanId.value).catch(() => ({ data: null })),
+    ])
+    routeVersions.value = (routeRes.data as RouteVersion[]) || []
     const selected = routeVersions.value.find((r) => r.isSelected)
     if (selected) selectedRouteId.value = selected.id
+    healthSummary.value = (sumRes.data as PlanHealthWeatherSummary) || null
   } catch (e) {
     console.error(e)
   } finally {
@@ -669,6 +777,7 @@ async function fetchRoutes() {
 function handlePlanChange() {
   routeVersions.value = []
   selectedRouteId.value = ''
+  healthSummary.value = null
   fetchRoutes()
 }
 

@@ -36,6 +36,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '照护分工' }
   },
   {
+    path: '/health-reminders',
+    name: 'HealthReminders',
+    component: () => import('@/views/HealthRemindersView.vue'),
+    meta: { title: '出行前提醒' }
+  },
+  {
     path: '/statistics',
     name: 'Statistics',
     component: () => import('@/views/StatisticsView.vue'),

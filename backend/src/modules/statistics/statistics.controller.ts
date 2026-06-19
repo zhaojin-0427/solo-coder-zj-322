@@ -13,6 +13,9 @@ import {
   CareFailureReasonItem,
   CarePriorityDistributionItem,
   CarePlanBurdenItem,
+  HealthReminderStats,
+  HealthConcernStatItem,
+  WeatherRiskChangeStatItem,
 } from './entities/statistics.entity';
 
 @ApiTags('statistics')
@@ -119,6 +122,27 @@ export class StatisticsController {
   @ApiOkResponse({ type: [CarePlanBurdenItem] })
   getCarePlanBurden(): CarePlanBurdenItem[] {
     return this.statisticsService.getCarePlanBurden();
+  }
+
+  @Get('health-reminder-stats')
+  @ApiOperation({ summary: '获取健康提醒确认率、高风险长辈数量等汇总统计' })
+  @ApiOkResponse({ type: HealthReminderStats })
+  getHealthReminderStats(): HealthReminderStats {
+    return this.statisticsService.getHealthReminderStats();
+  }
+
+  @Get('top-health-concerns')
+  @ApiOperation({ summary: '获取常见健康顾虑排行统计' })
+  @ApiOkResponse({ type: [HealthConcernStatItem] })
+  getTopHealthConcerns(): HealthConcernStatItem[] {
+    return this.statisticsService.getTopHealthConcerns();
+  }
+
+  @Get('weather-risk-change-distribution')
+  @ApiOperation({ summary: '获取天气风险等级与临时变更关联分布' })
+  @ApiOkResponse({ type: [WeatherRiskChangeStatItem] })
+  getWeatherRiskChangeDistribution(): WeatherRiskChangeStatItem[] {
+    return this.statisticsService.getWeatherRiskChangeDistribution();
   }
 
   @Get('all')

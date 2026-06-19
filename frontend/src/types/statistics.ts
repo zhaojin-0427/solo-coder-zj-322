@@ -1,5 +1,6 @@
 import type { StaminaLevel } from './feedbacks'
 import type { CareTaskStats, CareFailureReasonItem, CarePriorityDistributionItem, CarePlanBurdenItem } from './care-tasks'
+import type { HealthReminderStats, HealthConcernStatItem, WeatherRiskChangeStatItem } from './health-weather'
 
 export interface OverviewStats {
   totalPlans: number
@@ -74,4 +75,7 @@ export interface StatisticsData {
   careFailureReasons: CareFailureReasonItem[]
   carePriorityDistribution: CarePriorityDistributionItem[]
   carePlanBurden: CarePlanBurdenItem[]
+  healthReminderStats: HealthReminderStats
+  topHealthConcerns: HealthConcernStatItem[]
+  weatherRiskChangeDistribution: WeatherRiskChangeStatItem[]
 }

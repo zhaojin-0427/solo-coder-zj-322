@@ -33,6 +33,10 @@
           <el-icon><FirstAidKit /></el-icon>
           <span>照护分工</span>
         </el-menu-item>
+        <el-menu-item index="/health-reminders">
+          <el-icon><Bell /></el-icon>
+          <span>出行前提醒</span>
+        </el-menu-item>
         <el-menu-item index="/statistics">
           <el-icon><DataAnalysis /></el-icon>
           <span>数据统计</span>
@@ -70,7 +74,8 @@ import {
   Guide,
   Refresh,
   DataAnalysis,
-  FirstAidKit
+  FirstAidKit,
+  Bell
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -83,6 +88,7 @@ const titleMap: Record<string, string> = {
   '/routes': '路线协商与推荐',
   '/changes': '途中变更记录',
   '/care-tasks': '照护分工与物品确认',
+  '/health-reminders': '出行前健康与天气适配提醒',
   '/statistics': '数据统计分析'
 }
 

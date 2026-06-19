@@ -5,6 +5,7 @@ import { RoutesService } from '../routes/routes.service';
 import { ChangesService } from '../changes/changes.service';
 import { FeedbacksService } from '../feedbacks/feedbacks.service';
 import { CareTasksService } from '../care-tasks/care-tasks.service';
+import { HealthWeatherService } from '../health-weather/health-weather.service';
 import { StaminaLevel } from '../preferences/entities/preference.entity';
 import {
   OverviewStatistics,
@@ -19,6 +20,9 @@ import {
   CareFailureReasonItem,
   CarePriorityDistributionItem,
   CarePlanBurdenItem,
+  HealthReminderStats,
+  HealthConcernStatItem,
+  WeatherRiskChangeStatItem,
 } from './entities/statistics.entity';
 
 @Injectable()
@@ -30,6 +34,7 @@ export class StatisticsService {
     private readonly changesService: ChangesService,
     private readonly feedbacksService: FeedbacksService,
     private readonly careTasksService: CareTasksService,
+    private readonly healthWeatherService: HealthWeatherService,
   ) {}
 
   getOverview(): OverviewStatistics {
@@ -260,6 +265,35 @@ export class StatisticsService {
     }));
   }
 
+  getHealthReminderStats(): HealthReminderStats {
+    const stats = this.healthWeatherService.getHealthStatistics();
+    return {
+      totalConfigs: stats.totalConfigs,
+      totalCheckins: stats.totalCheckins,
+      overallConfirmationRate: stats.overallConfirmationRate,
+      totalHighRiskElders: stats.totalHighRiskElders,
+      totalMediumRiskElders: stats.totalMediumRiskElders,
+      totalLowRiskElders: stats.totalLowRiskElders,
+      totalShortenRouteSuggestions: stats.totalShortenRouteSuggestions,
+      configCoverageRate: stats.configCoverageRate,
+    };
+  }
+
+  getTopHealthConcerns(): HealthConcernStatItem[] {
+    const stats = this.healthWeatherService.getHealthStatistics();
+    return stats.topHealthConcerns;
+  }
+
+  getWeatherRiskChangeDistribution(): WeatherRiskChangeStatItem[] {
+    const stats = this.healthWeatherService.getHealthStatistics();
+    return stats.weatherRiskChangeDistribution.map((w) => ({
+      weatherRiskLevel: w.weatherRiskLevel,
+      changeCount: w.changeCount,
+      planCount: w.planCount,
+      avgChangesPerPlan: w.avgChangesPerPlan,
+    }));
+  }
+
   getAll() {
     const ov = this.getOverview();
     const overview = {
@@ -282,6 +316,9 @@ export class StatisticsService {
       careFailureReasons: this.getCareFailureReasons(),
       carePriorityDistribution: this.getCarePriorityDistribution(),
       carePlanBurden: this.getCarePlanBurden(),
+      healthReminderStats: this.getHealthReminderStats(),
+      topHealthConcerns: this.getTopHealthConcerns(),
+      weatherRiskChangeDistribution: this.getWeatherRiskChangeDistribution(),
     };
   }
 }

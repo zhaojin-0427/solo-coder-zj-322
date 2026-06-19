@@ -200,3 +200,54 @@ export class CarePlanBurdenItem {
   @ApiProperty({ description: '高优先级任务数' })
   highCount: number;
 }
+
+export class HealthReminderStats {
+  @ApiProperty({ description: '总健康天气配置数' })
+  totalConfigs: number;
+
+  @ApiProperty({ description: '总登记数' })
+  totalCheckins: number;
+
+  @ApiProperty({ description: '整体健康提醒确认率（0-100）' })
+  overallConfirmationRate: number;
+
+  @ApiProperty({ description: '高风险长辈总数' })
+  totalHighRiskElders: number;
+
+  @ApiProperty({ description: '中风险长辈总数' })
+  totalMediumRiskElders: number;
+
+  @ApiProperty({ description: '低风险长辈总数' })
+  totalLowRiskElders: number;
+
+  @ApiProperty({ description: '建议改短路线累计次数' })
+  totalShortenRouteSuggestions: number;
+
+  @ApiProperty({ description: '健康提醒配置覆盖率（配置数/活跃计划数）' })
+  configCoverageRate: number;
+}
+
+export class HealthConcernStatItem {
+  @ApiProperty({ description: '顾虑名称' })
+  concern: string;
+
+  @ApiProperty({ description: '出现次数' })
+  count: number;
+
+  @ApiProperty({ description: '占比（0-100）' })
+  percentage: number;
+}
+
+export class WeatherRiskChangeStatItem {
+  @ApiProperty({ description: '天气风险等级' })
+  weatherRiskLevel: string;
+
+  @ApiProperty({ description: '该天气风险下的临时变更次数' })
+  changeCount: number;
+
+  @ApiProperty({ description: '该天气风险下的计划数' })
+  planCount: number;
+
+  @ApiProperty({ description: '平均变更次数/计划' })
+  avgChangesPerPlan: number;
+}

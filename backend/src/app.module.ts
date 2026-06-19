@@ -6,8 +6,9 @@ import { ChangesModule } from './modules/changes/changes.module';
 import { StatisticsModule } from './modules/statistics/statistics.module';
 import { FeedbacksModule } from './modules/feedbacks/feedbacks.module';
 import { CareTasksModule } from './modules/care-tasks/care-tasks.module';
+import { HealthWeatherModule } from './modules/health-weather/health-weather.module';
 
 @Module({
-  imports: [PlansModule, PreferencesModule, RoutesModule, ChangesModule, StatisticsModule, FeedbacksModule, CareTasksModule],
+  imports: [PlansModule, PreferencesModule, RoutesModule, ChangesModule, StatisticsModule, FeedbacksModule, CareTasksModule, HealthWeatherModule],
 })
 export class AppModule {}

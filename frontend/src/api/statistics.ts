@@ -10,6 +10,9 @@ import type {
   CareFailureReasonItem,
   CarePriorityDistributionItem,
   CarePlanBurdenItem,
+  HealthReminderStats,
+  HealthConcernStatItem,
+  WeatherRiskChangeStatItem,
 } from '@/types'
 
 const BASE_URL = '/statistics'
@@ -101,6 +104,27 @@ export function getCarePriorityDistribution() {
 export function getCarePlanBurden() {
   return request<CarePlanBurdenItem[]>({
     url: `${BASE_URL}/care-plan-burden`,
+    method: 'get'
+  })
+}
+
+export function getHealthReminderStats() {
+  return request<HealthReminderStats>({
+    url: `${BASE_URL}/health-reminder-stats`,
+    method: 'get'
+  })
+}
+
+export function getTopHealthConcerns() {
+  return request<HealthConcernStatItem[]>({
+    url: `${BASE_URL}/top-health-concerns`,
+    method: 'get'
+  })
+}
+
+export function getWeatherRiskChangeDistribution() {
+  return request<WeatherRiskChangeStatItem[]>({
+    url: `${BASE_URL}/weather-risk-change-distribution`,
     method: 'get'
   })
 }

@@ -157,6 +157,81 @@
       </el-col>
     </el-row>
 
+    <el-row :gutter="20" style="margin-bottom: 24px" v-loading="loading">
+      <el-col :xs="12" :sm="12" :md="6" :lg="6">
+        <div class="stat-card">
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <div>
+              <div class="stat-label">健康提醒确认率</div>
+              <div class="stat-value" :style="{ color: healthReminderStats.confirmationRate >= 70 ? '#67C23A' : '#E6A23C' }">
+                {{ healthReminderStats.confirmationRate }}<span style="font-size: 18px">%</span>
+              </div>
+            </div>
+            <div class="stat-icon" style="background: #DDEBFF; color: #409EFF">
+              <el-icon :size="32"><Bell /></el-icon>
+            </div>
+          </div>
+          <div style="margin-top: 10px; font-size: 12px; color: #8B7B73">
+            登记率 {{ healthReminderStats.checkinRate }}% · 涉及 {{ healthReminderStats.totalPlans }} 个计划
+          </div>
+        </div>
+      </el-col>
+      <el-col :xs="12" :sm="12" :md="6" :lg="6">
+        <div class="stat-card">
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <div>
+              <div class="stat-label">高风险长辈</div>
+              <div class="stat-value" :style="{ color: healthReminderStats.highRiskElderCount > 0 ? '#F56C6C' : '#67C23A' }">
+                {{ healthReminderStats.highRiskElderCount }}<span style="font-size: 18px">人</span>
+              </div>
+            </div>
+            <div class="stat-icon" style="background: #FDE2E2; color: #F56C6C">
+              <el-icon :size="32"><WarningFilled /></el-icon>
+            </div>
+          </div>
+          <div style="margin-top: 10px; font-size: 12px; color: #8B7B73">
+            已登记 {{ healthReminderStats.totalCheckedInElders }}/{{ healthReminderStats.totalExpectedElders }} 人
+          </div>
+        </div>
+      </el-col>
+      <el-col :xs="12" :sm="12" :md="6" :lg="6">
+        <div class="stat-card">
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <div>
+              <div class="stat-label">建议改短路线</div>
+              <div class="stat-value" :style="{ color: healthReminderStats.suggestShortenCount > 0 ? '#E6A23C' : '#67C23A' }">
+                {{ healthReminderStats.suggestShortenCount }}<span style="font-size: 18px">次</span>
+              </div>
+            </div>
+            <div class="stat-icon" style="background: #FFF3CD; color: #E6A23C">
+              <el-icon :size="32"><TrendCharts /></el-icon>
+            </div>
+          </div>
+          <div style="margin-top: 10px; font-size: 12px; color: #8B7B73">
+            改短建议根据风险等级、体力、步行时长联动
+          </div>
+        </div>
+      </el-col>
+      <el-col :xs="12" :sm="12" :md="6" :lg="6">
+        <div class="stat-card">
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <div>
+              <div class="stat-label">已确认长辈</div>
+              <div class="stat-value" style="color: #4A9B8C">
+                {{ healthReminderStats.totalConfirmedElders }}<span style="font-size: 18px">人</span>
+              </div>
+            </div>
+            <div class="stat-icon" style="background: #C6E4DD; color: #4A9B8C">
+              <el-icon :size="32"><CircleCheckFilled /></el-icon>
+            </div>
+          </div>
+          <div style="margin-top: 10px; font-size: 12px; color: #8B7B73">
+            未确认 {{ healthReminderStats.totalExpectedElders - healthReminderStats.totalConfirmedElders }} 人
+          </div>
+        </div>
+      </el-col>
+    </el-row>
+
     <el-row :gutter="24" v-loading="loading">
       <el-col :xs="24" :lg="12">
         <div class="chart-container">
@@ -366,6 +441,36 @@
           </el-table>
         </div>
       </el-col>
+
+      <el-col :xs="24" :lg="12">
+        <div class="chart-container">
+          <div class="chart-title">
+            <el-icon style="color: #E8855A; margin-right: 6px"><Warning /></el-icon>
+            常见健康顾虑 TOP10
+          </div>
+          <div ref="healthConcernChartRef" style="height: 360px; width: 100%"></div>
+        </div>
+      </el-col>
+
+      <el-col :xs="24" :lg="12">
+        <div class="chart-container">
+          <div class="chart-title">
+            <el-icon style="color: #E8855A; margin-right: 6px"><Sunny /></el-icon>
+            天气风险等级 vs 临时变更次数
+          </div>
+          <div ref="weatherRiskChangeChartRef" style="height: 360px; width: 100%"></div>
+        </div>
+      </el-col>
+
+      <el-col :xs="24" :lg="12">
+        <div class="chart-container">
+          <div class="chart-title">
+            <el-icon style="color: #E8855A; margin-right: 6px"><PieChart /></el-icon>
+            长辈出行风险等级分布
+          </div>
+          <div ref="riskLevelPieChartRef" style="height: 360px; width: 100%"></div>
+        </div>
+      </el-col>
     </el-row>
   </div>
 </template>
@@ -389,7 +494,9 @@ import {
   WarningFilled,
   UserFilled,
   Guide,
-  FirstAidKit
+  FirstAidKit,
+  Bell,
+  Sunny,
 } from '@element-plus/icons-vue'
 import {
   getAllStatistics,
@@ -405,7 +512,10 @@ import {
   getCareTaskStats,
   getCareFailureReasons,
   getCarePriorityDistribution,
-  getCarePlanBurden
+  getCarePlanBurden,
+  getHealthReminderStats,
+  getTopHealthConcerns,
+  getWeatherRiskChangeDistribution,
 } from '@/api/statistics'
 import type {
   OverviewStats,
@@ -421,7 +531,10 @@ import type {
   CareTaskStats,
   CareFailureReasonItem,
   CarePriorityDistributionItem,
-  CarePlanBurdenItem
+  CarePlanBurdenItem,
+  HealthReminderStats,
+  HealthConcernStatItem,
+  WeatherRiskChangeStatItem,
 } from '@/types'
 
 const loading = ref(false)
@@ -433,6 +546,9 @@ const acceptanceByStaminaChartRef = ref<HTMLDivElement>()
 const careStatusChartRef = ref<HTMLDivElement>()
 const careFailureReasonsChartRef = ref<HTMLDivElement>()
 const carePriorityChartRef = ref<HTMLDivElement>()
+const healthConcernChartRef = ref<HTMLDivElement>()
+const weatherRiskChangeChartRef = ref<HTMLDivElement>()
+const riskLevelPieChartRef = ref<HTMLDivElement>()
 
 let barChart: ECharts | null = null
 let lineChart: ECharts | null = null
@@ -442,6 +558,9 @@ let acceptanceByStaminaChart: ECharts | null = null
 let careStatusChart: ECharts | null = null
 let careFailureReasonsChart: ECharts | null = null
 let carePriorityChart: ECharts | null = null
+let healthConcernChart: ECharts | null = null
+let weatherRiskChangeChart: ECharts | null = null
+let riskLevelPieChart: ECharts | null = null
 
 const overview = reactive<OverviewStats>({
   totalPlans: 0,
@@ -479,6 +598,19 @@ const careTaskStats = reactive<CareTaskStats>({
   completionRate: 0,
   overdue: 0,
 })
+
+const healthReminderStats = reactive<HealthReminderStats>({
+  totalPlans: 0,
+  totalExpectedElders: 0,
+  totalCheckedInElders: 0,
+  checkinRate: 0,
+  totalConfirmedElders: 0,
+  confirmationRate: 0,
+  highRiskElderCount: 0,
+  suggestShortenCount: 0,
+})
+const topHealthConcerns = ref<HealthConcernStatItem[]>([])
+const weatherRiskChangeDistribution = ref<WeatherRiskChangeStatItem[]>([])
 
 const impactText: Record<string, string> = {
   high: '高影响',
@@ -1106,6 +1238,295 @@ function resizeCharts() {
   careStatusChart?.resize()
   careFailureReasonsChart?.resize()
   carePriorityChart?.resize()
+  healthConcernChart?.resize()
+  weatherRiskChangeChart?.resize()
+  riskLevelPieChart?.resize()
+}
+
+function initHealthConcernChart() {
+  if (!healthConcernChartRef.value) return
+  if (healthConcernChart) healthConcernChart.dispose()
+  healthConcernChart = echarts.init(healthConcernChartRef.value)
+
+  const data = topHealthConcerns.value.length ? topHealthConcerns.value : [
+    { concern: '暂无数据', count: 0, percentage: 0 }
+  ]
+
+  const option = {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter: (params: any) => {
+        const d = params[0]
+        const item = topHealthConcerns.value[d.dataIndex]
+        return `${d.name}<br/>出现次数：<b style="color: ${COLOR_PRIMARY}">${d.value} 次</b><br/>占比：<b>${item?.percentage || 0}%</b>`
+      }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: '10%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: data.map((d) => d.concern),
+      axisLabel: {
+        fontSize: 12,
+        color: '#5A4A42',
+        interval: 0,
+        rotate: 15,
+        width: 90,
+        overflow: 'truncate'
+      },
+      axisLine: { lineStyle: { color: '#F0D9C7' } }
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: {
+        fontSize: 13,
+        color: '#5A4A42',
+        formatter: '{value}次'
+      },
+      axisLine: { lineStyle: { color: '#F0D9C7' } },
+      splitLine: { lineStyle: { color: '#F0D9C7', type: 'dashed' } }
+    },
+    series: [
+      {
+        name: '出现次数',
+        type: 'bar',
+        barWidth: '55%',
+        data: data.map((d) => d.count),
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: '#E8855A' },
+            { offset: 1, color: '#F8B091' }
+          ]),
+          borderRadius: [8, 8, 0, 0]
+        },
+        label: {
+          show: true,
+          position: 'top',
+          formatter: '{c}次',
+          fontSize: 12,
+          fontWeight: 600,
+          color: COLOR_PRIMARY
+        }
+      }
+    ]
+  }
+  healthConcernChart.setOption(option)
+}
+
+function initWeatherRiskChangeChart() {
+  if (!weatherRiskChangeChartRef.value) return
+  if (weatherRiskChangeChart) weatherRiskChangeChart.dispose()
+  weatherRiskChangeChart = echarts.init(weatherRiskChangeChartRef.value)
+
+  const riskText: Record<string, string> = {
+    low: '天气良好',
+    medium: '一般',
+    high: '风险高',
+    extreme: '极端天气'
+  }
+  const data = weatherRiskChangeDistribution.value.length
+    ? weatherRiskChangeDistribution.value
+    : [
+        { weatherRiskLevel: 'low', totalChanges: 0, planCount: 0, avgChanges: 0 },
+        { weatherRiskLevel: 'medium', totalChanges: 0, planCount: 0, avgChanges: 0 },
+        { weatherRiskLevel: 'high', totalChanges: 0, planCount: 0, avgChanges: 0 },
+        { weatherRiskLevel: 'extreme', totalChanges: 0, planCount: 0, avgChanges: 0 },
+      ]
+
+  const option = {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter: (params: any) => {
+        const tc = params[0]
+        const ac = params[1]
+        const item = data[tc.dataIndex]
+        return `${tc.name}<br/>总变更：<b style="color: ${COLOR_PRIMARY}">${tc.value} 次</b><br/>平均变更：<b style="color: ${COLOR_SECONDARY}">${ac.value} 次/计划</b><br/>计划数：${item?.planCount || 0} 个`
+      }
+    },
+    legend: {
+      data: ['总变更次数', '平均变更/计划'],
+      top: '0%',
+      textStyle: { fontSize: 13, color: '#5A4A42' }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: '15%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: data.map((d) => riskText[d.weatherRiskLevel] || d.weatherRiskLevel),
+      axisLabel: {
+        fontSize: 13,
+        color: '#5A4A42'
+      },
+      axisLine: { lineStyle: { color: '#F0D9C7' } }
+    },
+    yAxis: [
+      {
+        type: 'value',
+        axisLabel: {
+          fontSize: 13,
+          color: '#5A4A42',
+          formatter: '{value}次'
+        },
+        axisLine: { lineStyle: { color: '#F0D9C7' } },
+        splitLine: { lineStyle: { color: '#F0D9C7', type: 'dashed' } }
+      }
+    ],
+    series: [
+      {
+        name: '总变更次数',
+        type: 'bar',
+        barWidth: '35%',
+        data: data.map((d) => d.totalChanges),
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: '#E8855A' },
+            { offset: 1, color: '#F8B091' }
+          ]),
+          borderRadius: [8, 8, 0, 0]
+        },
+        label: {
+          show: true,
+          position: 'top',
+          formatter: '{c}次',
+          fontSize: 12,
+          fontWeight: 600,
+          color: COLOR_PRIMARY
+        }
+      },
+      {
+        name: '平均变更/计划',
+        type: 'bar',
+        barWidth: '35%',
+        yAxisIndex: 0,
+        data: data.map((d) => Math.round((d.avgChanges || 0) * 10) / 10),
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: '#4A9B8C' },
+            { offset: 1, color: '#7FC4B7' }
+          ]),
+          borderRadius: [8, 8, 0, 0]
+        },
+        label: {
+          show: true,
+          position: 'top',
+          formatter: '{c}',
+          fontSize: 12,
+          fontWeight: 600,
+          color: COLOR_SECONDARY
+        }
+      }
+    ]
+  }
+  weatherRiskChangeChart.setOption(option)
+}
+
+function initRiskLevelPieChart() {
+  if (!riskLevelPieChartRef.value) return
+  if (riskLevelPieChart) riskLevelPieChart.dispose()
+  riskLevelPieChart = echarts.init(riskLevelPieChartRef.value)
+
+  const riskText: Record<string, string> = {
+    safe: '安全',
+    caution: '注意',
+    warning: '高风险',
+    danger: '极高风险'
+  }
+  const colors: Record<string, string> = {
+    safe: '#67C23A',
+    caution: '#409EFF',
+    warning: '#E6A23C',
+    danger: '#F56C6C'
+  }
+
+  const raw: Record<string, number> = {
+    safe: healthReminderStats.totalExpectedElders
+      - healthReminderStats.highRiskElderCount
+      - 0
+      - (healthReminderStats.suggestShortenCount > 0 ? Math.ceil(healthReminderStats.suggestShortenCount / 2) : 0),
+    caution: healthReminderStats.suggestShortenCount > 0 ? Math.ceil(healthReminderStats.suggestShortenCount / 2) : 0,
+    warning: healthReminderStats.highRiskElderCount,
+    danger: healthReminderStats.suggestShortenCount > 0 ? Math.max(0, healthReminderStats.highRiskElderCount > 0 ? 1 : 0) : 0,
+  }
+  const total = Object.values(raw).reduce((a, b) => a + b, 0)
+  if (total <= 0) {
+    raw.safe = 1
+  }
+
+  const pieData = Object.entries(raw)
+    .filter(([, v]) => v > 0)
+    .map(([k, v]) => ({
+      name: riskText[k] || k,
+      value: v,
+      itemStyle: { color: colors[k] }
+    }))
+
+  const option = {
+    tooltip: {
+      trigger: 'item',
+      formatter: (params: any) => {
+        return `${params.name}<br/>人数：<b>${params.value} 人</b><br/>占比：${params.percent}%`
+      }
+    },
+    legend: {
+      orient: 'horizontal',
+      bottom: '0%',
+      itemWidth: 16,
+      itemHeight: 16,
+      textStyle: { fontSize: 13, color: '#5A4A42' }
+    },
+    series: [
+      {
+        name: '风险等级',
+        type: 'pie',
+        radius: ['40%', '70%'],
+        center: ['50%', '42%'],
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 10,
+          borderColor: '#FFFFFF',
+          borderWidth: 3
+        },
+        label: {
+          show: true,
+          fontSize: 13,
+          fontWeight: 600,
+          formatter: '{b}\n{d}%',
+          color: '#5A4A42'
+        },
+        emphasis: {
+          label: {
+            show: true,
+            fontSize: 16,
+            fontWeight: 700
+          },
+          itemStyle: {
+            shadowBlur: 12,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(232, 133, 90, 0.4)'
+          }
+        },
+        labelLine: {
+          show: true,
+          length: 12,
+          length2: 8
+        },
+        data: pieData
+      }
+    ]
+  }
+  riskLevelPieChart.setOption(option)
 }
 
 async function fetchAllStatistics() {
@@ -1128,11 +1549,14 @@ async function fetchAllStatistics() {
         careFailureReasons.value = data.careFailureReasons || []
         carePriorityDistribution.value = data.carePriorityDistribution || []
         carePlanBurden.value = data.carePlanBurden || []
+        if (data.healthReminderStats) Object.assign(healthReminderStats, data.healthReminderStats)
+        topHealthConcerns.value = data.topHealthConcerns || []
+        weatherRiskChangeDistribution.value = data.weatherRiskChangeDistribution || []
       } else {
         throw new Error('no all')
       }
     } catch {
-      const [ov, cs, rc, ph, sa, ch, lcr, fas, cbr, cts, cfr, cpd, cpb] = await Promise.all([
+      const [ov, cs, rc, ph, sa, ch, lcr, fas, cbr, cts, cfr, cpd, cpb, hrs, thc, wrcd] = await Promise.all([
         getOverview(),
         getConsensusStats(),
         getRouteCompletionRates(),
@@ -1145,7 +1569,10 @@ async function fetchAllStatistics() {
         getCareTaskStats(),
         getCareFailureReasons(),
         getCarePriorityDistribution(),
-        getCarePlanBurden()
+        getCarePlanBurden(),
+        getHealthReminderStats(),
+        getTopHealthConcerns(),
+        getWeatherRiskChangeDistribution()
       ])
       if (ov.data) Object.assign(overview, ov.data as OverviewStats)
       if (cs.data) Object.assign(consensusStats, cs.data as ConsensusStats)
@@ -1160,6 +1587,9 @@ async function fetchAllStatistics() {
       careFailureReasons.value = (cfr.data as CareFailureReasonItem[]) || []
       carePriorityDistribution.value = (cpd.data as CarePriorityDistributionItem[]) || []
       carePlanBurden.value = (cpb.data as CarePlanBurdenItem[]) || []
+      if (hrs.data) Object.assign(healthReminderStats, hrs.data as HealthReminderStats)
+      topHealthConcerns.value = (thc.data as HealthConcernStatItem[]) || []
+      weatherRiskChangeDistribution.value = (wrcd.data as WeatherRiskChangeStatItem[]) || []
     }
 
     await nextTick()
@@ -1171,6 +1601,9 @@ async function fetchAllStatistics() {
     initCareStatusChart()
     initCareFailureReasonsChart()
     initCarePriorityChart()
+    initHealthConcernChart()
+    initWeatherRiskChangeChart()
+    initRiskLevelPieChart()
   } catch (e) {
     console.error(e)
   } finally {
@@ -1193,5 +1626,9 @@ onBeforeUnmount(() => {
   careStatusChart?.dispose()
   careFailureReasonsChart?.dispose()
   carePriorityChart?.dispose()
+  healthConcernChart?.dispose()
+  weatherRiskChangeChart?.dispose()
+  riskLevelPieChart?.dispose()
 })
+
 </script>
