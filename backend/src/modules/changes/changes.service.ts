@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Change, ChangeType } from './entities/change.entity';
 import { CreateChangeDto, UpdateChangeDto } from './dto/change.dto';
+import { RoutesService } from '../routes/routes.service';
+import { FeedbacksService } from '../feedbacks/feedbacks.service';
 
 const generateId = () => Math.random().toString(36).substring(2, 10);
 
@@ -88,6 +90,11 @@ const mockChanges: Change[] = [
 export class ChangesService {
   private changes: Change[] = [...mockChanges];
 
+  constructor(
+    private readonly routesService: RoutesService,
+    private readonly feedbacksService: FeedbacksService,
+  ) {}
+
   findAll(): Change[] {
     return this.changes;
   }
@@ -103,6 +110,37 @@ export class ChangesService {
   }
 
   create(dto: CreateChangeDto): Change {
+    let routeId = dto.routeId;
+    let routeVersionName = dto.routeVersionName;
+    let consensusScore = dto.consensusScore;
+    let riskTagsAtChange = dto.riskTagsAtChange;
+    let isForcedRoute = dto.isForcedRoute;
+
+    if (!routeId) {
+      try {
+        const selectedRoute = this.routesService.findSelected(dto.planId);
+        if (selectedRoute) {
+          routeId = selectedRoute.id;
+          routeVersionName = selectedRoute.versionName;
+          consensusScore = selectedRoute.consensusScore;
+          riskTagsAtChange = selectedRoute.riskTags;
+          isForcedRoute = selectedRoute.isForcedPublish;
+        }
+      } catch (_e) {
+        // ignore if no selected route
+      }
+    }
+
+    if (routeId && consensusScore === undefined) {
+      try {
+        const consensus = this.feedbacksService.calculateConsensus(routeId);
+        consensusScore = consensus.consensusScore;
+        riskTagsAtChange = consensus.riskTags;
+      } catch (_e) {
+        // ignore
+      }
+    }
+
     const change: Change = {
       id: 'change-' + generateId(),
       planId: dto.planId,
@@ -113,6 +151,11 @@ export class ChangesService {
       changeReason: dto.changeReason,
       changeTime: dto.changeTime || new Date().toISOString(),
       impactNotes: dto.impactNotes,
+      routeId,
+      routeVersionName,
+      consensusScore,
+      riskTagsAtChange,
+      isForcedRoute,
     };
     this.changes.push(change);
     return change;

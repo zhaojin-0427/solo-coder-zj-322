@@ -1,3 +1,5 @@
+import type { StaminaLevel } from './feedbacks'
+
 export interface OverviewStats {
   totalPlans: number
   averageCompletionRate: number
@@ -27,10 +29,44 @@ export interface ChangeHotspotItem {
   impactLevel: 'high' | 'medium' | 'low'
 }
 
+export interface ConsensusStats {
+  consensusPassRate: number
+  totalPublished: number
+  consensusPassedCount: number
+  forcedPublishCount: number
+  consensusThreshold: number
+}
+
+export interface LowConsensusReasonItem {
+  reason: string
+  count: number
+  percentage: number
+}
+
+export interface FeedbackAcceptanceByStaminaItem {
+  staminaLevel: StaminaLevel
+  totalFeedbacks: number
+  acceptedCount: number
+  acceptanceRate: number
+}
+
+export interface ConsensusByRouteItem {
+  routeId: string
+  routeVersionName: string
+  consensusScore: number
+  isConsensusReached: boolean
+  feedbackCount: number
+  isForced: boolean
+}
+
 export interface StatisticsData {
   overview: OverviewStats
   routeCompletionRates: RouteCompletionItem[]
   peakHourDistribution: PeakHourItem[]
   satisfactionByStamina: SatisfactionItem[]
   changeHotspots: ChangeHotspotItem[]
+  consensusStats: ConsensusStats
+  lowConsensusReasons: LowConsensusReasonItem[]
+  feedbackAcceptanceByStamina: FeedbackAcceptanceByStaminaItem[]
+  consensusByRoute: ConsensusByRouteItem[]
 }

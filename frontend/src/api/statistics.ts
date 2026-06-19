@@ -1,5 +1,12 @@
 import { request } from './request'
-import type { StatisticsData, OverviewStats } from '@/types'
+import type {
+  StatisticsData,
+  OverviewStats,
+  ConsensusStats,
+  LowConsensusReasonItem,
+  FeedbackAcceptanceByStaminaItem,
+  ConsensusByRouteItem
+} from '@/types'
 
 const BASE_URL = '/statistics'
 
@@ -34,6 +41,34 @@ export function getSatisfactionByStamina() {
 export function getChangeHotspots() {
   return request<any[]>({
     url: `${BASE_URL}/change-hotspots`,
+    method: 'get'
+  })
+}
+
+export function getConsensusStats() {
+  return request<ConsensusStats>({
+    url: `${BASE_URL}/consensus-stats`,
+    method: 'get'
+  })
+}
+
+export function getLowConsensusReasons() {
+  return request<LowConsensusReasonItem[]>({
+    url: `${BASE_URL}/low-consensus-reasons`,
+    method: 'get'
+  })
+}
+
+export function getFeedbackAcceptanceByStamina() {
+  return request<FeedbackAcceptanceByStaminaItem[]>({
+    url: `${BASE_URL}/feedback-acceptance-by-stamina`,
+    method: 'get'
+  })
+}
+
+export function getConsensusByRoute() {
+  return request<ConsensusByRouteItem[]>({
+    url: `${BASE_URL}/consensus-by-route`,
     method: 'get'
   })
 }

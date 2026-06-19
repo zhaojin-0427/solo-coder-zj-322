@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { Route, Waypoint, Difficulty } from './entities/route.entity';
 import { CreateRouteDto, UpdateRouteDto } from './dto/route.dto';
 import { PlansService } from '../plans/plans.service';
 import { PreferencesService } from '../preferences/preferences.service';
+import { FeedbacksService } from '../feedbacks/feedbacks.service';
 import { StaminaLevel, RestFrequency } from '../preferences/entities/preference.entity';
 
 const generateId = () => Math.random().toString(36).substring(2, 10);
@@ -86,20 +87,66 @@ export class RoutesService {
   constructor(
     private readonly plansService: PlansService,
     private readonly preferencesService: PreferencesService,
+    @Inject(forwardRef(() => FeedbacksService))
+    private readonly feedbacksService: FeedbacksService,
   ) {}
 
+  private enrichRouteWithConsensus(route: Route): Route {
+    try {
+      const consensus = this.feedbacksService.calculateConsensus(route.id);
+      const publishRecord = this.feedbacksService.getPublishRecord(route.id);
+      return {
+        ...route,
+        consensusScore: consensus.consensusScore,
+        isConsensusReached: consensus.isConsensusReached,
+        feedbackCount: consensus.feedbackCount,
+        riskTags: consensus.riskTags,
+        lowConsensusReasons: consensus.lowConsensusReasons,
+        recommendedRank: consensus.recommendedRank,
+        isForcedPublish: publishRecord?.isForced,
+        manualConfirmReason: publishRecord?.manualReason,
+        publisher: publishRecord?.publisher,
+        publishTime: publishRecord?.publishTime,
+      };
+    } catch (_e) {
+      return route;
+    }
+  }
+
   findAll(): Route[] {
-    return this.routes;
+    return this.routes.map((r) => this.enrichRouteWithConsensus(r));
   }
 
   findOne(id: string): Route {
     const route = this.routes.find((r) => r.id === id);
     if (!route) throw new NotFoundException(`路线 ${id} 不存在`);
-    return route;
+    return this.enrichRouteWithConsensus(route);
   }
 
   findByPlanId(planId: string): Route[] {
-    return this.routes.filter((r) => r.planId === planId);
+    const routes = this.routes.filter((r) => r.planId === planId);
+    try {
+      const consensusList = this.feedbacksService.calculatePlanRoutesConsensus(planId);
+      return routes.map((r) => {
+        const consensus = consensusList.find((c) => c.routeId === r.id);
+        const publishRecord = this.feedbacksService.getPublishRecord(r.id);
+        return {
+          ...r,
+          consensusScore: consensus?.consensusScore ?? 0,
+          isConsensusReached: consensus?.isConsensusReached ?? false,
+          feedbackCount: consensus?.feedbackCount ?? 0,
+          riskTags: consensus?.riskTags ?? [],
+          lowConsensusReasons: consensus?.lowConsensusReasons ?? [],
+          recommendedRank: consensus?.recommendedRank ?? 999,
+          isForcedPublish: publishRecord?.isForced,
+          manualConfirmReason: publishRecord?.manualReason,
+          publisher: publishRecord?.publisher,
+          publishTime: publishRecord?.publishTime,
+        };
+      }).sort((a, b) => (a.recommendedRank ?? 999) - (b.recommendedRank ?? 999));
+    } catch (_e) {
+      return routes.map((r) => this.enrichRouteWithConsensus(r));
+    }
   }
 
   create(dto: CreateRouteDto): Route {

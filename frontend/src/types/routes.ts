@@ -1,3 +1,5 @@
+import type { RiskTag } from './feedbacks'
+
 export type DifficultyLevel = 'easy' | 'moderate' | 'hard'
 
 export interface RouteWaypoint {
@@ -20,6 +22,16 @@ export interface RouteVersion {
   recommendations: string[]
   isSelected?: boolean
   createdAt?: string
+  consensusScore?: number
+  isConsensusReached?: boolean
+  feedbackCount?: number
+  riskTags?: RiskTag[]
+  lowConsensusReasons?: string[]
+  recommendedRank?: number
+  isForcedPublish?: boolean
+  manualConfirmReason?: string
+  publisher?: string
+  publishTime?: string
 }
 
 export interface GenerateRouteParams {

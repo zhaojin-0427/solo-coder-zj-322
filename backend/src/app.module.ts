@@ -4,8 +4,9 @@ import { PreferencesModule } from './modules/preferences/preferences.module';
 import { RoutesModule } from './modules/routes/routes.module';
 import { ChangesModule } from './modules/changes/changes.module';
 import { StatisticsModule } from './modules/statistics/statistics.module';
+import { FeedbacksModule } from './modules/feedbacks/feedbacks.module';
 
 @Module({
-  imports: [PlansModule, PreferencesModule, RoutesModule, ChangesModule, StatisticsModule],
+  imports: [PlansModule, PreferencesModule, RoutesModule, ChangesModule, StatisticsModule, FeedbacksModule],
 })
 export class AppModule {}

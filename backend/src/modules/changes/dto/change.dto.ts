@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsIn, IsOptional } from 'class-validator';
+import { IsString, IsIn, IsOptional, IsArray, IsNumber, IsBoolean } from 'class-validator';
 import { ChangeType } from '../entities/change.entity';
+import { RiskTag } from '../../feedbacks/entities/feedback.entity';
 
 export class CreateChangeDto {
   @ApiProperty({ description: '关联计划ID' })
@@ -35,6 +36,31 @@ export class CreateChangeDto {
   @IsString()
   @IsOptional()
   changeTime?: string;
+
+  @ApiPropertyOptional({ description: '关联路线ID' })
+  @IsString()
+  @IsOptional()
+  routeId?: string;
+
+  @ApiPropertyOptional({ description: '关联路线版本名称' })
+  @IsString()
+  @IsOptional()
+  routeVersionName?: string;
+
+  @ApiPropertyOptional({ description: '当时的共识分' })
+  @IsNumber()
+  @IsOptional()
+  consensusScore?: number;
+
+  @ApiPropertyOptional({ type: [String], description: '当时的风险标签' })
+  @IsArray()
+  @IsOptional()
+  riskTagsAtChange?: RiskTag[];
+
+  @ApiPropertyOptional({ description: '是否为强制发布的路线' })
+  @IsBoolean()
+  @IsOptional()
+  isForcedRoute?: boolean;
 }
 
 export class UpdateChangeDto {

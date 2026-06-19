@@ -40,6 +40,45 @@
         <div class="stat-card">
           <div style="display: flex; justify-content: space-between; align-items: center">
             <div>
+              <div class="stat-label">路线共识通过率</div>
+              <div class="stat-value" :style="{ color: consensusStats.consensusPassRate >= 70 ? '#67C23A' : '#E6A23C' }">
+                {{ consensusStats.consensusPassRate }}<span style="font-size: 18px">%</span>
+              </div>
+            </div>
+            <div class="stat-icon" style="background: #E1F3D9; color: #67C23A">
+              <el-icon :size="32"><CircleCheckFilled /></el-icon>
+            </div>
+          </div>
+          <div style="margin-top: 10px; font-size: 12px; color: #8B7B73">
+            阈值 {{ consensusStats.consensusThreshold }} 分 · 已发布 {{ consensusStats.totalPublished }} 条
+          </div>
+        </div>
+      </el-col>
+      <el-col :xs="12" :sm="12" :md="6" :lg="6">
+        <div class="stat-card">
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <div>
+              <div class="stat-label">人工强制发布次数</div>
+              <div class="stat-value" :style="{ color: consensusStats.forcedPublishCount > 0 ? '#F56C6C' : '#67C23A' }">
+                {{ consensusStats.forcedPublishCount }}<span style="font-size: 18px">次</span>
+              </div>
+            </div>
+            <div class="stat-icon" style="background: #FDE2E2; color: #F56C6C">
+              <el-icon :size="32"><WarningFilled /></el-icon>
+            </div>
+          </div>
+          <div style="margin-top: 10px; font-size: 12px; color: #8B7B73">
+            共识通过 {{ consensusStats.consensusPassedCount }} 条
+          </div>
+        </div>
+      </el-col>
+    </el-row>
+
+    <el-row :gutter="20" style="margin-bottom: 24px" v-loading="loading">
+      <el-col :xs="12" :sm="12" :md="6" :lg="6">
+        <div class="stat-card">
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <div>
               <div class="stat-label">平均休息次数</div>
               <div class="stat-value">{{ overview.averageRestCount }}<span style="font-size: 18px">次</span></div>
             </div>
@@ -133,6 +172,68 @@
           </el-table>
         </div>
       </el-col>
+
+      <el-col :xs="24" :lg="12">
+        <div class="chart-container">
+          <div class="chart-title">
+            <el-icon style="color: #E8855A; margin-right: 6px"><WarningFilled /></el-icon>
+            低共识高发原因
+          </div>
+          <div ref="lowConsensusChartRef" style="height: 360px; width: 100%"></div>
+        </div>
+      </el-col>
+
+      <el-col :xs="24" :lg="12">
+        <div class="chart-container">
+          <div class="chart-title">
+            <el-icon style="color: #E8855A; margin-right: 6px"><UserFilled /></el-icon>
+            不同体力等级反馈接受度
+          </div>
+          <div ref="acceptanceByStaminaChartRef" style="height: 360px; width: 100%"></div>
+        </div>
+      </el-col>
+
+      <el-col :xs="24">
+        <div class="chart-container">
+          <div class="chart-title">
+            <el-icon style="color: #E8855A; margin-right: 6px"><Guide /></el-icon>
+            各路线版本共识情况一览
+          </div>
+          <el-table :data="consensusByRoute" stripe border size="large" style="width: 100%">
+            <el-table-column prop="routeVersionName" label="路线版本" min-width="180" />
+            <el-table-column label="共识分" width="120" align="center">
+              <template #default="{ row }">
+                <el-tag
+                  :type="row.consensusScore >= consensusStats.consensusThreshold ? 'success' : 'warning'"
+                  effect="light"
+                  size="large"
+                >
+                  {{ row.consensusScore }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="是否达成共识" width="130" align="center">
+              <template #default="{ row }">
+                <el-tag :type="row.isConsensusReached ? 'success' : 'info'" effect="light" size="large">
+                  {{ row.isConsensusReached ? '已达成' : '未达成' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="反馈人数" width="110" align="center">
+              <template #default="{ row }">
+                <span style="font-weight: 600">{{ row.feedbackCount }} 人</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="发布方式" width="130" align="center">
+              <template #default="{ row }">
+                <el-tag :type="row.isForced ? 'danger' : 'success'" effect="light" size="large">
+                  {{ row.isForced ? '强制发布' : '正常发布' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </el-col>
     </el-row>
   </div>
 </template>
@@ -145,12 +246,16 @@ import {
   Refresh,
   Calendar,
   CircleCheck,
+  CircleCheckFilled,
   Coffee,
   RefreshRight,
   DataAnalysis,
   Histogram,
   PieChart,
-  TrendCharts
+  TrendCharts,
+  WarningFilled,
+  UserFilled,
+  Guide
 } from '@element-plus/icons-vue'
 import {
   getAllStatistics,
@@ -158,7 +263,11 @@ import {
   getRouteCompletionRates,
   getPeakHourDistribution,
   getSatisfactionByStamina,
-  getChangeHotspots
+  getChangeHotspots,
+  getConsensusStats,
+  getLowConsensusReasons,
+  getFeedbackAcceptanceByStamina,
+  getConsensusByRoute
 } from '@/api/statistics'
 import type {
   OverviewStats,
@@ -166,6 +275,10 @@ import type {
   PeakHourItem,
   SatisfactionItem,
   ChangeHotspotItem,
+  ConsensusStats,
+  LowConsensusReasonItem,
+  FeedbackAcceptanceByStaminaItem,
+  ConsensusByRouteItem,
   StatisticsData
 } from '@/types'
 
@@ -173,10 +286,14 @@ const loading = ref(false)
 const barChartRef = ref<HTMLDivElement>()
 const lineChartRef = ref<HTMLDivElement>()
 const pieChartRef = ref<HTMLDivElement>()
+const lowConsensusChartRef = ref<HTMLDivElement>()
+const acceptanceByStaminaChartRef = ref<HTMLDivElement>()
 
 let barChart: ECharts | null = null
 let lineChart: ECharts | null = null
 let pieChart: ECharts | null = null
+let lowConsensusChart: ECharts | null = null
+let acceptanceByStaminaChart: ECharts | null = null
 
 const overview = reactive<OverviewStats>({
   totalPlans: 0,
@@ -185,10 +302,21 @@ const overview = reactive<OverviewStats>({
   totalChanges: 0
 })
 
+const consensusStats = reactive<ConsensusStats>({
+  consensusPassRate: 0,
+  totalPublished: 0,
+  consensusPassedCount: 0,
+  forcedPublishCount: 0,
+  consensusThreshold: 70
+})
+
 const routeCompletionRates = ref<RouteCompletionItem[]>([])
 const peakHourDistribution = ref<PeakHourItem[]>([])
 const satisfactionByStamina = ref<SatisfactionItem[]>([])
 const changeHotspots = ref<ChangeHotspotItem[]>([])
+const lowConsensusReasons = ref<LowConsensusReasonItem[]>([])
+const feedbackAcceptanceByStamina = ref<FeedbackAcceptanceByStaminaItem[]>([])
+const consensusByRoute = ref<ConsensusByRouteItem[]>([])
 
 const impactText: Record<string, string> = {
   high: '高影响',
@@ -204,7 +332,7 @@ const impactTagType: Record<string, 'danger' | 'warning' | 'success'> = {
 
 const COLOR_PRIMARY = '#E8855A'
 const COLOR_SECONDARY = '#4A9B8C'
-const COLORS = ['#E8855A', '#4A9B8C', '#E6A23C', '#F56C6C', '#909399', '#67C23A']
+const COLORS = ['#E8855A', '#4A9B8C', '#E6A23C', '#F56C6C', '#909399', '#67C23A', '#8B7B73', '#F0D9C7']
 
 function initBarChart() {
   if (!barChartRef.value) return
@@ -360,13 +488,6 @@ function initPieChart() {
   if (pieChart) pieChart.dispose()
   pieChart = echarts.init(pieChartRef.value)
 
-  const defaultData: SatisfactionItem[] = [
-    { staminaLevel: '体力低', satisfactionRate: 72 },
-    { staminaLevel: '体力中', satisfactionRate: 88 },
-    { staminaLevel: '体力高', satisfactionRate: 95 }
-  ]
-  const data = satisfactionByStamina.value.length ? satisfactionByStamina.value : defaultData
-
   const option = {
     tooltip: {
       trigger: 'item',
@@ -418,7 +539,7 @@ function initPieChart() {
           length: 16,
           length2: 12
         },
-        data: data.map((d) => ({
+        data: satisfactionByStamina.value.map((d) => ({
           name: d.staminaLevel,
           value: d.satisfactionRate
         }))
@@ -428,10 +549,159 @@ function initPieChart() {
   pieChart.setOption(option)
 }
 
+function initLowConsensusChart() {
+  if (!lowConsensusChartRef.value) return
+  if (lowConsensusChart) lowConsensusChart.dispose()
+  lowConsensusChart = echarts.init(lowConsensusChartRef.value)
+
+  const option = {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter: (params: any) => {
+        const d = params[0]
+        const item = lowConsensusReasons.value[d.dataIndex]
+        return `${d.name}<br/>出现次数：<b style="color: ${COLOR_PRIMARY}">${d.value} 次</b><br/>占比：<b>${item?.percentage || 0}%</b>`
+      }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: '10%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: lowConsensusReasons.value.map((d) => d.reason),
+      axisLabel: {
+        fontSize: 12,
+        color: '#5A4A42',
+        interval: 0,
+        rotate: 15,
+        width: 100,
+        overflow: 'truncate'
+      },
+      axisLine: { lineStyle: { color: '#F0D9C7' } }
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: {
+        fontSize: 13,
+        color: '#5A4A42',
+        formatter: '{value}次'
+      },
+      axisLine: { lineStyle: { color: '#F0D9C7' } },
+      splitLine: { lineStyle: { color: '#F0D9C7', type: 'dashed' } }
+    },
+    series: [
+      {
+        name: '出现次数',
+        type: 'bar',
+        barWidth: '55%',
+        data: lowConsensusReasons.value.map((d) => d.count),
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: '#F56C6C' },
+            { offset: 1, color: '#E8855A' }
+          ]),
+          borderRadius: [8, 8, 0, 0]
+        },
+        label: {
+          show: true,
+          position: 'top',
+          formatter: '{c}次',
+          fontSize: 12,
+          fontWeight: 600,
+          color: '#F56C6C'
+        }
+      }
+    ]
+  }
+  lowConsensusChart.setOption(option)
+}
+
+function initAcceptanceByStaminaChart() {
+  if (!acceptanceByStaminaChartRef.value) return
+  if (acceptanceByStaminaChart) acceptanceByStaminaChart.dispose()
+  acceptanceByStaminaChart = echarts.init(acceptanceByStaminaChartRef.value)
+
+  const option = {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter: (params: any) => {
+        const d = params[0]
+        const item = feedbackAcceptanceByStamina.value[d.dataIndex]
+        return `${d.name}<br/>接受度：<b style="color: ${COLOR_SECONDARY}">${d.value}%</b><br/>总反馈：${item?.totalFeedbacks || 0} 条<br/>接受：${item?.acceptedCount || 0} 条`
+      }
+    },
+    legend: {
+      data: ['反馈接受度'],
+      top: '0%',
+      textStyle: { fontSize: 13, color: '#5A4A42' }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: '15%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: feedbackAcceptanceByStamina.value.map((d) => `体力${d.staminaLevel}`),
+      axisLabel: {
+        fontSize: 13,
+        color: '#5A4A42'
+      },
+      axisLine: { lineStyle: { color: '#F0D9C7' } }
+    },
+    yAxis: {
+      type: 'value',
+      min: 0,
+      max: 100,
+      axisLabel: {
+        fontSize: 13,
+        color: '#5A4A42',
+        formatter: '{value}%'
+      },
+      axisLine: { lineStyle: { color: '#F0D9C7' } },
+      splitLine: { lineStyle: { color: '#F0D9C7', type: 'dashed' } }
+    },
+    series: [
+      {
+        name: '反馈接受度',
+        type: 'bar',
+        barWidth: '45%',
+        data: feedbackAcceptanceByStamina.value.map((d) => d.acceptanceRate),
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: '#67C23A' },
+            { offset: 1, color: COLOR_SECONDARY }
+          ]),
+          borderRadius: [8, 8, 0, 0]
+        },
+        label: {
+          show: true,
+          position: 'top',
+          formatter: '{c}%',
+          fontSize: 13,
+          fontWeight: 600,
+          color: COLOR_SECONDARY
+        }
+      }
+    ]
+  }
+  acceptanceByStaminaChart.setOption(option)
+}
+
 function resizeCharts() {
   barChart?.resize()
   lineChart?.resize()
   pieChart?.resize()
+  lowConsensusChart?.resize()
+  acceptanceByStaminaChart?.resize()
 }
 
 async function fetchAllStatistics() {
@@ -442,57 +712,46 @@ async function fetchAllStatistics() {
       const data = res.data as StatisticsData
       if (data) {
         Object.assign(overview, data.overview)
+        Object.assign(consensusStats, data.consensusStats)
         routeCompletionRates.value = data.routeCompletionRates || []
         peakHourDistribution.value = data.peakHourDistribution || []
         satisfactionByStamina.value = data.satisfactionByStamina || []
         changeHotspots.value = data.changeHotspots || []
+        lowConsensusReasons.value = data.lowConsensusReasons || []
+        feedbackAcceptanceByStamina.value = data.feedbackAcceptanceByStamina || []
+        consensusByRoute.value = data.consensusByRoute || []
       } else {
         throw new Error('no all')
       }
     } catch {
-      const [ov, rc, ph, sa, ch] = await Promise.all([
+      const [ov, cs, rc, ph, sa, ch, lcr, fas, cbr] = await Promise.all([
         getOverview(),
+        getConsensusStats(),
         getRouteCompletionRates(),
         getPeakHourDistribution(),
         getSatisfactionByStamina(),
-        getChangeHotspots()
+        getChangeHotspots(),
+        getLowConsensusReasons(),
+        getFeedbackAcceptanceByStamina(),
+        getConsensusByRoute()
       ])
       if (ov.data) Object.assign(overview, ov.data as OverviewStats)
+      if (cs.data) Object.assign(consensusStats, cs.data as ConsensusStats)
       routeCompletionRates.value = (rc.data as RouteCompletionItem[]) || []
       peakHourDistribution.value = (ph.data as PeakHourItem[]) || []
       satisfactionByStamina.value = (sa.data as SatisfactionItem[]) || []
       changeHotspots.value = (ch.data as ChangeHotspotItem[]) || []
-    }
-
-    if (!changeHotspots.value.length) {
-      changeHotspots.value = [
-        { rank: 1, nodeName: '公园东门入口', changeCount: 12, impactLevel: 'high' },
-        { rank: 2, nodeName: '休息亭A区', changeCount: 9, impactLevel: 'medium' },
-        { rank: 3, nodeName: '观景平台', changeCount: 8, impactLevel: 'high' },
-        { rank: 4, nodeName: '步道中段', changeCount: 7, impactLevel: 'medium' },
-        { rank: 5, nodeName: '山脚集合点', changeCount: 6, impactLevel: 'medium' },
-        { rank: 6, nodeName: '公厕旁休息区', changeCount: 5, impactLevel: 'low' },
-        { rank: 7, nodeName: '荷花池边', changeCount: 4, impactLevel: 'low' },
-        { rank: 8, nodeName: '老年活动中心', changeCount: 4, impactLevel: 'medium' },
-        { rank: 9, nodeName: '南门出口', changeCount: 3, impactLevel: 'low' },
-        { rank: 10, nodeName: '假山景点', changeCount: 2, impactLevel: 'low' }
-      ]
-    }
-
-    if (!routeCompletionRates.value.length) {
-      routeCompletionRates.value = [
-        { routeName: '轻松休闲线', completionRate: 92 },
-        { routeName: '适中观景线', completionRate: 85 },
-        { routeName: '挑战登山线', completionRate: 68 },
-        { routeName: '文化探访线', completionRate: 78 },
-        { routeName: '湖光山色线', completionRate: 88 }
-      ]
+      lowConsensusReasons.value = (lcr.data as LowConsensusReasonItem[]) || []
+      feedbackAcceptanceByStamina.value = (fas.data as FeedbackAcceptanceByStaminaItem[]) || []
+      consensusByRoute.value = (cbr.data as ConsensusByRouteItem[]) || []
     }
 
     await nextTick()
     initBarChart()
     initLineChart()
     initPieChart()
+    initLowConsensusChart()
+    initAcceptanceByStaminaChart()
   } catch (e) {
     console.error(e)
   } finally {
@@ -510,5 +769,7 @@ onBeforeUnmount(() => {
   barChart?.dispose()
   lineChart?.dispose()
   pieChart?.dispose()
+  lowConsensusChart?.dispose()
+  acceptanceByStaminaChart?.dispose()
 })
 </script>

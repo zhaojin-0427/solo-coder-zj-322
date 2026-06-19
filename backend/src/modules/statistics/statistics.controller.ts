@@ -1,7 +1,15 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
 import { StatisticsService } from './statistics.service';
-import { OverviewStatistics, PlanRateItem, HeatmapItem } from './entities/statistics.entity';
+import {
+  OverviewStatistics,
+  PlanRateItem,
+  HeatmapItem,
+  ConsensusStats,
+  LowConsensusReasonItem,
+  FeedbackAcceptanceByStaminaItem,
+  ConsensusByRouteItem,
+} from './entities/statistics.entity';
 
 @ApiTags('statistics')
 @Controller('statistics')
@@ -51,6 +59,34 @@ export class StatisticsController {
   @ApiOperation({ summary: '变更高发节点TOP10' })
   getChangeHotspots() {
     return this.statisticsService.getChangeHotspots();
+  }
+
+  @Get('consensus-stats')
+  @ApiOperation({ summary: '获取路线共识统计（通过率、强制发布次数等）' })
+  @ApiOkResponse({ type: ConsensusStats })
+  getConsensusStats(): ConsensusStats {
+    return this.statisticsService.getConsensusStats();
+  }
+
+  @Get('low-consensus-reasons')
+  @ApiOperation({ summary: '获取低共识高发原因统计' })
+  @ApiOkResponse({ type: [LowConsensusReasonItem] })
+  getLowConsensusReasons(): LowConsensusReasonItem[] {
+    return this.statisticsService.getLowConsensusReasons();
+  }
+
+  @Get('feedback-acceptance-by-stamina')
+  @ApiOperation({ summary: '获取不同体力等级的反馈接受度' })
+  @ApiOkResponse({ type: [FeedbackAcceptanceByStaminaItem] })
+  getFeedbackAcceptanceByStamina(): FeedbackAcceptanceByStaminaItem[] {
+    return this.statisticsService.getFeedbackAcceptanceByStamina();
+  }
+
+  @Get('consensus-by-route')
+  @ApiOperation({ summary: '按路线获取共识情况' })
+  @ApiOkResponse({ type: [ConsensusByRouteItem] })
+  getConsensusByRoute(): ConsensusByRouteItem[] {
+    return this.statisticsService.getConsensusByRoute();
   }
 
   @Get('all')

@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { RiskTag } from '../../feedbacks/entities/feedback.entity';
 
 export class Waypoint {
   @ApiProperty({ description: '途经点名称' })
@@ -46,4 +47,34 @@ export class Route {
 
   @ApiProperty({ description: '是否选中为最终路线', required: false })
   isSelected?: boolean;
+
+  @ApiProperty({ description: '共识分数 0-100', required: false })
+  consensusScore?: number;
+
+  @ApiProperty({ description: '是否达到共识阈值', required: false })
+  isConsensusReached?: boolean;
+
+  @ApiProperty({ description: '参与反馈人数', required: false })
+  feedbackCount?: number;
+
+  @ApiProperty({ type: [String], description: '风险标签', required: false })
+  riskTags?: RiskTag[];
+
+  @ApiProperty({ type: [String], description: '低共识主要原因', required: false })
+  lowConsensusReasons?: string[];
+
+  @ApiProperty({ description: '推荐排序', required: false })
+  recommendedRank?: number;
+
+  @ApiProperty({ description: '是否为强制发布', required: false })
+  isForcedPublish?: boolean;
+
+  @ApiProperty({ description: '人工确认原因', required: false })
+  manualConfirmReason?: string;
+
+  @ApiProperty({ description: '发布人', required: false })
+  publisher?: string;
+
+  @ApiProperty({ description: '发布时间', required: false })
+  publishTime?: string;
 }

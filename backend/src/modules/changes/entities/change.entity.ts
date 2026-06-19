@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { RiskTag } from '../../feedbacks/entities/feedback.entity';
 
 export type ChangeType = '提前返回' | '更改集合点' | '其他';
 
@@ -29,4 +30,19 @@ export class Change {
 
   @ApiProperty({ description: '影响说明' })
   impactNotes: string;
+
+  @ApiProperty({ description: '关联路线ID', required: false })
+  routeId?: string;
+
+  @ApiProperty({ description: '关联路线版本名称', required: false })
+  routeVersionName?: string;
+
+  @ApiProperty({ description: '当时的共识分', required: false })
+  consensusScore?: number;
+
+  @ApiProperty({ type: [String], description: '当时的风险标签', required: false })
+  riskTagsAtChange?: RiskTag[];
+
+  @ApiProperty({ description: '是否为强制发布的路线', required: false })
+  isForcedRoute?: boolean;
 }

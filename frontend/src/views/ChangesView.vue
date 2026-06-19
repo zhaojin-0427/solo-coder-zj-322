@@ -84,17 +84,44 @@
             size="large"
           >
             <div style="background: #FBF5EF; border-radius: 12px; padding: 18px 20px">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px">
-                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
-                  <span style="font-size: 18px; font-weight: 700; color: #5A4A42">
-                    {{ item.elderName }}
-                  </span>
-                  <el-tag :type="changeTypeTag[item.changeType]" effect="light" size="large">
-                    <el-icon style="margin-right: 4px" :size="14">
-                      <component :is="changeTypeIcon[item.changeType]" />
-                    </el-icon>
-                    {{ changeTypeText[item.changeType] }}
-                  </el-tag>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; flex-wrap: wrap; gap: 12px">
+                <div style="flex: 1; min-width: 300px">
+                  <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px">
+                    <span style="font-size: 18px; font-weight: 700; color: #5A4A42">
+                      {{ item.elderName }}
+                    </span>
+                    <el-tag :type="changeTypeTag[item.changeType]" effect="light" size="large">
+                      <el-icon style="margin-right: 4px" :size="14">
+                        <component :is="changeTypeIcon[item.changeType]" />
+                      </el-icon>
+                      {{ changeTypeText[item.changeType] }}
+                    </el-tag>
+                  </div>
+                  <div v-if="item.routeVersionName" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px">
+                    <el-tag type="info" effect="plain" size="small">
+                      <el-icon style="margin-right: 4px"><Guide /></el-icon>
+                      路线：{{ item.routeVersionName }}
+                    </el-tag>
+                    <el-tag
+                      v-if="item.consensusScore !== undefined"
+                      :type="item.consensusScore >= 70 ? 'success' : 'warning'"
+                      effect="plain"
+                      size="small"
+                    >
+                      共识分：{{ item.consensusScore }}
+                    </el-tag>
+                    <el-tag v-if="item.isForcedRoute" type="danger" effect="plain" size="small">
+                      强制发布路线
+                    </el-tag>
+                    <el-tag
+                      v-if="item.riskTagsAtChange && item.riskTagsAtChange.length > 0"
+                      type="warning"
+                      effect="plain"
+                      size="small"
+                    >
+                      风险：{{ item.riskTagsAtChange.join('、') }}
+                    </el-tag>
+                  </div>
                 </div>
                 <div style="display: flex; gap: 8px">
                   <el-button link type="primary" size="large" :icon="Edit" @click="openEditDialog(item)">
@@ -254,7 +281,8 @@ import {
   Back,
   Location,
   MoreFilled,
-  Right
+  Right,
+  Guide
 } from '@element-plus/icons-vue'
 import { getAllPlans } from '@/api/plans'
 import {

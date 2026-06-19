@@ -3,11 +3,17 @@ import { PlansService } from '../plans/plans.service';
 import { PreferencesService } from '../preferences/preferences.service';
 import { RoutesService } from '../routes/routes.service';
 import { ChangesService } from '../changes/changes.service';
+import { FeedbacksService } from '../feedbacks/feedbacks.service';
+import { StaminaLevel } from '../preferences/entities/preference.entity';
 import {
   OverviewStatistics,
   PlanRateItem,
   HeatmapItem,
   SatisfactionByStamina,
+  ConsensusStats,
+  LowConsensusReasonItem,
+  FeedbackAcceptanceByStaminaItem,
+  ConsensusByRouteItem,
 } from './entities/statistics.entity';
 
 @Injectable()
@@ -17,6 +23,7 @@ export class StatisticsService {
     private readonly preferencesService: PreferencesService,
     private readonly routesService: RoutesService,
     private readonly changesService: ChangesService,
+    private readonly feedbacksService: FeedbacksService,
   ) {}
 
   getOverview(): OverviewStatistics {
@@ -33,12 +40,11 @@ export class StatisticsService {
     const changeStats = this.changesService.getChangeStats();
     const topChangeNodes = changeStats.topChangeNodes;
 
-    const satisfactionBase: SatisfactionByStamina = { 低: 0.82, 中: 0.9, 高: 0.95 };
-    const staminaStats = this.preferencesService.getStaminaStats();
+    const feedbackAcceptance = this.feedbacksService.getFeedbackAcceptanceByStamina();
     const satisfactionByStamina: SatisfactionByStamina = {
-      低: Math.min(1, satisfactionBase['低'] - ((staminaStats['低'] || 0) * 0.01)),
-      中: Math.min(1, satisfactionBase['中'] - ((staminaStats['中'] || 0) * 0.005)),
-      高: Math.min(1, satisfactionBase['高'] - ((staminaStats['高'] || 0) * 0.002)),
+      低: feedbackAcceptance['低'].total > 0 ? feedbackAcceptance['低'].acceptanceRate / 100 : 0,
+      中: feedbackAcceptance['中'].total > 0 ? feedbackAcceptance['中'].acceptanceRate / 100 : 0,
+      高: feedbackAcceptance['高'].total > 0 ? feedbackAcceptance['高'].acceptanceRate / 100 : 0,
     };
 
     return {
@@ -72,17 +78,33 @@ export class StatisticsService {
   }
 
   getRouteCompletion() {
-    const plans = this.plansService.findAll();
-    const routeStats = this.routesService.getPlanRoutesStats();
-    const routeNames = ['轻松休闲线', '适中观景线', '挑战登山线', '文化探访线', '湖光山色线'];
-    const baseRates = [92, 85, 68, 78, 88];
-    return routeNames.map((routeName, i) => {
-      const plan = plans[i % plans.length];
-      const stat = routeStats[plan.id] || { total: 0, completed: 0, rate: 0 };
-      const realRate = stat.total > 0 ? Math.round(stat.rate * 100) : 0;
-      const completionRate = realRate > 0 ? realRate : baseRates[i];
-      return { routeName, completionRate };
-    });
+    const allRoutes = this.routesService.findAll();
+    if (allRoutes.length === 0) {
+      return [];
+    }
+
+    const routeCompletionMap: Record<string, { total: number; completed: number }> = {};
+    const planStats = this.plansService.getStats();
+    const planMap: Record<string, boolean> = {};
+    for (const plan of planStats.plans) {
+      planMap[plan.id] = plan.status === 'completed';
+    }
+
+    for (const route of allRoutes) {
+      const key = route.versionName || route.id;
+      if (!routeCompletionMap[key]) {
+        routeCompletionMap[key] = { total: 0, completed: 0 };
+      }
+      routeCompletionMap[key].total++;
+      if (planMap[route.planId]) {
+        routeCompletionMap[key].completed++;
+      }
+    }
+
+    return Object.entries(routeCompletionMap).map(([routeName, stats]) => ({
+      routeName,
+      completionRate: stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0,
+    }));
   }
 
   getPeakHours() {
@@ -101,56 +123,86 @@ export class StatisticsService {
         }
       } catch (_e) { /* ignore */ }
     }
-    const mockBoost = [0, 1, 3, 5, 2, 4, 6, 8, 3, 2, 1];
-    const result = Object.entries(hourCount).map(([hour, cnt], i) => ({
+    const result = Object.entries(hourCount).map(([hour, cnt]) => ({
       hour,
-      changeCount: cnt + (mockBoost[i] || 0),
+      changeCount: cnt,
     }));
     return result;
   }
 
   getSatisfaction() {
-    const ov = this.getOverview();
-    const s = ov.satisfactionByStamina;
+    const acceptance = this.feedbacksService.getFeedbackAcceptanceByStamina();
     return [
-      { staminaLevel: '体力低', satisfactionRate: Math.round((s['低'] || 0.72) * 100) },
-      { staminaLevel: '体力中', satisfactionRate: Math.round((s['中'] || 0.88) * 100) },
-      { staminaLevel: '体力高', satisfactionRate: Math.round((s['高'] || 0.95) * 100) },
+      { staminaLevel: '体力低', satisfactionRate: acceptance['低'].acceptanceRate },
+      { staminaLevel: '体力中', satisfactionRate: acceptance['中'].acceptanceRate },
+      { staminaLevel: '体力高', satisfactionRate: acceptance['高'].acceptanceRate },
     ];
   }
 
   getChangeHotspots() {
-    const ov = this.getOverview();
-    const nodes = ov.topChangeNodes || [];
-    const namedMap: Record<string, { name: string; impact: 'high' | 'medium' | 'low' }> = {
-      '公园东门入口': { name: '公园东门入口', impact: 'high' },
-      '休息亭A区': { name: '休息亭A区', impact: 'medium' },
-      '观景平台': { name: '观景平台', impact: 'high' },
-      '步道中段': { name: '步道中段', impact: 'medium' },
-      '山脚集合点': { name: '山脚集合点', impact: 'medium' },
-      '公厕旁休息区': { name: '公厕旁休息区', impact: 'low' },
-      '荷花池边': { name: '荷花池边', impact: 'low' },
-      '老年活动中心': { name: '老年活动中心', impact: 'medium' },
-      '南门出口': { name: '南门出口', impact: 'low' },
-      '假山景点': { name: '假山景点', impact: 'low' },
-    };
-    const defaults = Object.entries(namedMap).map(([k, v], i) => ({
+    const changeStats = this.changesService.getChangeStats();
+    const nodes = changeStats.topChangeNodes || [];
+
+    if (nodes.length === 0) {
+      return [];
+    }
+
+    return nodes.map((n, i) => ({
       rank: i + 1,
-      nodeName: v.name,
-      changeCount: Math.max(1, 12 - i),
-      impactLevel: v.impact,
+      nodeName: n.node,
+      changeCount: n.count,
+      impactLevel: n.count >= 5 ? 'high' : n.count >= 3 ? 'medium' : 'low',
     }));
-    const fromData = nodes.map((n, i) => {
-      const mapped = namedMap[n.node] || { name: n.node || `节点${i + 1}`, impact: 'medium' as const };
+  }
+
+  getConsensusStats(): ConsensusStats {
+    const publishStats = this.feedbacksService.getPublishStats();
+    return {
+      consensusPassRate: Math.round(publishStats.passRate * 100),
+      totalPublished: publishStats.totalPublished,
+      consensusPassedCount: publishStats.consensusPassed,
+      forcedPublishCount: publishStats.forcedCount,
+      consensusThreshold: publishStats.consensusThreshold,
+    };
+  }
+
+  getLowConsensusReasons(): LowConsensusReasonItem[] {
+    const reasons = this.feedbacksService.getLowConsensusReasonsStats();
+    const total = reasons.reduce((sum, r) => sum + r.count, 0);
+    return reasons.map((r) => ({
+      reason: r.reason,
+      count: r.count,
+      percentage: total > 0 ? Math.round((r.count / total) * 100) : 0,
+    }));
+  }
+
+  getFeedbackAcceptanceByStamina(): FeedbackAcceptanceByStaminaItem[] {
+    const data = this.feedbacksService.getFeedbackAcceptanceByStamina();
+    const levels: StaminaLevel[] = ['低', '中', '高'];
+    return levels.map((level) => ({
+      staminaLevel: level,
+      totalFeedbacks: data[level].total,
+      acceptedCount: data[level].accepted,
+      acceptanceRate: data[level].acceptanceRate,
+    }));
+  }
+
+  getConsensusByRoute(): ConsensusByRouteItem[] {
+    const allRoutes = this.routesService.findAll();
+    return allRoutes.map((route) => {
+      const publishRecord = this.feedbacksService.getPublishRecord(route.id);
+      const consensus = route.consensusScore !== undefined ? route.consensusScore : 0;
+      const isReached = route.isConsensusReached !== undefined ? route.isConsensusReached : false;
+      const feedbackCount = route.feedbackCount !== undefined ? route.feedbackCount : 0;
       return {
-        rank: i + 1,
-        nodeName: mapped.name,
-        changeCount: n.count || Math.max(1, 10 - i),
-        impactLevel: mapped.impact,
+        routeId: route.id,
+        routeVersionName: route.versionName,
+        consensusScore: consensus,
+        isConsensusReached: isReached,
+        feedbackCount: feedbackCount,
+        isForced: publishRecord?.isForced || false,
       };
-    });
-    const merged = fromData.length ? fromData : defaults;
-    return merged.slice(0, 10);
+    }).sort((a, b) => b.consensusScore - a.consensusScore);
   }
 
   getAll() {
@@ -167,6 +219,10 @@ export class StatisticsService {
       peakHourDistribution: this.getPeakHours(),
       satisfactionByStamina: this.getSatisfaction(),
       changeHotspots: this.getChangeHotspots(),
+      consensusStats: this.getConsensusStats(),
+      lowConsensusReasons: this.getLowConsensusReasons(),
+      feedbackAcceptanceByStamina: this.getFeedbackAcceptanceByStamina(),
+      consensusByRoute: this.getConsensusByRoute(),
     };
   }
 }
