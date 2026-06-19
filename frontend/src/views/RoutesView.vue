@@ -740,7 +740,7 @@ function formatDateTime(dateStr: string) {
 async function fetchPlans() {
   try {
     const res = await getAllPlans()
-    planOptions.value = (res.data as TravelPlan[]) || []
+    planOptions.value = ((res.data as TravelPlan[]) || []).filter((p) => p.status !== 'cancelled')
   } catch (e) {
     console.error(e)
   }

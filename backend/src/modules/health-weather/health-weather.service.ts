@@ -237,24 +237,48 @@ export class HealthWeatherService {
   ) {}
 
   findAllConfigs(): HealthWeatherConfig[] {
-    return this.configs;
+    const cancelledPlanIds = new Set(
+      this.plansService
+        .findAll()
+        .filter((p) => p.status === 'cancelled')
+        .map((p) => p.id),
+    );
+    return this.configs.filter((c) => !cancelledPlanIds.has(c.planId));
   }
 
   findConfigByPlanId(planId: string): HealthWeatherConfig | undefined {
+    try {
+      const plan = this.plansService.findOne(planId);
+      if (plan.status === 'cancelled') return undefined;
+    } catch {
+      /* not found */
+    }
     return this.configs.find((c) => c.planId === planId);
   }
 
   findOneConfig(id: string): HealthWeatherConfig {
     const config = this.configs.find((c) => c.id === id);
     if (!config) throw new NotFoundException(`健康天气配置 ${id} 不存在`);
+    try {
+      const plan = this.plansService.findOne(config.planId);
+      if (plan.status === 'cancelled') {
+        throw new NotFoundException(`健康天气配置 ${id} 关联的计划已取消`);
+      }
+    } catch (e) {
+      if (e instanceof NotFoundException) throw e;
+    }
     return config;
   }
 
   createConfig(dto: CreateHealthWeatherConfigDto): HealthWeatherConfig {
+    let plan: any;
     try {
-      this.plansService.findOne(dto.planId);
+      plan = this.plansService.findOne(dto.planId);
     } catch (_e) {
       throw new BadRequestException(`关联计划 ${dto.planId} 不存在`);
+    }
+    if (plan.status === 'cancelled') {
+      throw new BadRequestException(`计划 ${dto.planId} 已取消，无法创建健康天气配置`);
     }
     const existing = this.configs.findIndex((c) => c.planId === dto.planId);
     if (existing !== -1) {
@@ -285,6 +309,14 @@ export class HealthWeatherService {
   updateConfig(id: string, dto: UpdateHealthWeatherConfigDto): HealthWeatherConfig {
     const idx = this.configs.findIndex((c) => c.id === id);
     if (idx === -1) throw new NotFoundException(`健康天气配置 ${id} 不存在`);
+    try {
+      const plan = this.plansService.findOne(this.configs[idx].planId);
+      if (plan.status === 'cancelled') {
+        throw new BadRequestException(`关联的计划已取消，无法更新配置`);
+      }
+    } catch (e) {
+      if (e instanceof BadRequestException || e instanceof NotFoundException) throw e;
+    }
     this.configs[idx] = { ...this.configs[idx], ...dto, updatedAt: new Date().toISOString() };
     return this.configs[idx];
   }
@@ -297,10 +329,22 @@ export class HealthWeatherService {
   }
 
   findAllCheckins(): ElderHealthCheckin[] {
-    return this.checkins;
+    const cancelledPlanIds = new Set(
+      this.plansService
+        .findAll()
+        .filter((p) => p.status === 'cancelled')
+        .map((p) => p.id),
+    );
+    return this.checkins.filter((c) => !cancelledPlanIds.has(c.planId));
   }
 
   findCheckinsByPlanId(planId: string): ElderHealthCheckin[] {
+    try {
+      const plan = this.plansService.findOne(planId);
+      if (plan.status === 'cancelled') return [];
+    } catch {
+      /* not found */
+    }
     return this.checkins.filter((c) => c.planId === planId);
   }
 
@@ -311,6 +355,49 @@ export class HealthWeatherService {
   }
 
   createCheckin(dto: CreateElderHealthCheckinDto): ElderHealthCheckin {
+    try {
+      const plan = this.plansService.findOne(dto.planId);
+      if (plan.status === 'cancelled') {
+        throw new BadRequestException(`计划 ${dto.planId} 已取消，无法登记健康状态`);
+      }
+    } catch (e) {
+      if (e instanceof BadRequestException || e instanceof NotFoundException) throw e;
+      throw new BadRequestException(`关联计划 ${dto.planId} 不存在`);
+    }
+    let idx = -1;
+    if (dto.preferenceId) {
+      idx = this.checkins.findIndex(
+        (c) => c.planId === dto.planId && c.preferenceId === dto.preferenceId,
+      );
+    }
+    if (idx === -1) {
+      idx = this.checkins.findIndex(
+        (c) => c.planId === dto.planId && c.elderName.trim() === dto.elderName.trim(),
+      );
+    }
+
+    if (idx !== -1) {
+      const existing = this.checkins[idx];
+      this.checkins[idx] = {
+        ...existing,
+        systolicBloodPressure: dto.systolicBloodPressure,
+        diastolicBloodPressure: dto.diastolicBloodPressure,
+        fastingBloodSugar: dto.fastingBloodSugar,
+        sleepQuality: dto.sleepQuality,
+        sleepHours: dto.sleepHours,
+        hasJointDiscomfort: dto.hasJointDiscomfort,
+        jointDiscomfortDetail: dto.jointDiscomfortDetail,
+        hasMedicationReady: dto.hasMedicationReady,
+        medicationsReady: dto.medicationsReady || [],
+        healthConcerns: dto.healthConcerns || [],
+        notes: dto.notes,
+        checkinTime: new Date().toISOString(),
+        isConfirmed: false,
+        preferenceId: dto.preferenceId || existing.preferenceId,
+      };
+      return this.checkins[idx];
+    }
+
     const checkin: ElderHealthCheckin = {
       id: 'hci-' + generateId(),
       planId: dto.planId,
@@ -641,13 +728,20 @@ export class HealthWeatherService {
   }
 
   getAllPlanSummaries(): PlanHealthWeatherSummary[] {
-    const plans = this.plansService.findAll();
+    const plans = this.plansService.findAll().filter((p) => p.status !== 'cancelled');
     return plans.map((p) => this.getPlanSummary(p.id));
   }
 
   private getTopHealthConcerns(): HealthConcernItem[] {
     const concernCount: Record<string, number> = {};
+    const cancelledPlanIds = new Set(
+      this.plansService
+        .findAll()
+        .filter((p) => p.status === 'cancelled')
+        .map((p) => p.id),
+    );
     for (const c of this.checkins) {
+      if (cancelledPlanIds.has(c.planId)) continue;
       if (c.healthConcerns && c.healthConcerns.length > 0) {
         for (const concern of c.healthConcerns) {
           const key = concern.trim();
@@ -682,9 +776,16 @@ export class HealthWeatherService {
     const levels: WeatherRiskLevel[] = ['low', 'medium', 'high', 'extreme'];
     const allChanges = this.changesService.findAll();
     const result: WeatherRiskChangeItem[] = [];
+    const cancelledPlanIds = new Set(
+      this.plansService
+        .findAll()
+        .filter((p) => p.status === 'cancelled')
+        .map((p) => p.id),
+    );
+    const filteredConfigs = this.configs.filter((c) => !cancelledPlanIds.has(c.planId));
 
     for (const level of levels) {
-      const configsOfLevel = this.configs.filter((c) => c.weatherRiskLevel === level);
+      const configsOfLevel = filteredConfigs.filter((c) => c.weatherRiskLevel === level);
       const planIdsOfLevel = configsOfLevel.map((c) => c.planId);
       const changesOfLevel = allChanges.filter((c) => planIdsOfLevel.includes(c.planId));
       const planCount = planIdsOfLevel.length;
@@ -699,9 +800,15 @@ export class HealthWeatherService {
   }
 
   getHealthStatistics(): HealthStatistics {
-    const totalConfigs = this.configs.length;
-    const totalCheckins = this.checkins.length;
-    const confirmed = this.checkins.filter((c) => c.isConfirmed).length;
+    const cancelledPlanIds = new Set(
+      this.plansService
+        .findAll()
+        .filter((p) => p.status === 'cancelled')
+        .map((p) => p.id),
+    );
+    const totalConfigs = this.configs.filter((c) => !cancelledPlanIds.has(c.planId)).length;
+    const totalCheckins = this.checkins.filter((c) => !cancelledPlanIds.has(c.planId)).length;
+    const confirmed = this.checkins.filter((c) => !cancelledPlanIds.has(c.planId) && c.isConfirmed).length;
     const overallConfirmationRate = totalCheckins > 0 ? Math.round((confirmed / totalCheckins) * 100) : 0;
 
     let totalHighRisk = 0;
@@ -709,7 +816,7 @@ export class HealthWeatherService {
     let totalLowRisk = 0;
     let totalShorten = 0;
 
-    const plans = this.plansService.findAll();
+    const plans = this.plansService.findAll().filter((p) => p.status !== 'cancelled');
     for (const plan of plans) {
       try {
         const advices = this.generateAdviceByPlanId(plan.id);
@@ -738,9 +845,15 @@ export class HealthWeatherService {
   }
 
   getUnconfirmedElders(planId?: string): Array<{ planId: string; planTitle: string; elderName: string; checkinTime?: string }> {
+    const cancelledPlanIds = new Set(
+      this.plansService
+        .findAll()
+        .filter((p) => p.status === 'cancelled')
+        .map((p) => p.id),
+    );
     const unconfirmed = planId
-      ? this.checkins.filter((c) => c.planId === planId && !c.isConfirmed)
-      : this.checkins.filter((c) => !c.isConfirmed);
+      ? this.checkins.filter((c) => c.planId === planId && !c.isConfirmed && !cancelledPlanIds.has(c.planId))
+      : this.checkins.filter((c) => !c.isConfirmed && !cancelledPlanIds.has(c.planId));
 
     const plans = this.plansService.findAll();
     const planTitleMap: Record<string, string> = {};

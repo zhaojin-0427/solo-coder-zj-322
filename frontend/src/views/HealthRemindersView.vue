@@ -987,9 +987,16 @@ const filteredAdvices = computed(() => {
   })
 })
 
-watch(riskFilter, (v) => {
-  if (v.includes('all') && v.length > 1) {
-    riskFilter.value = ['all']
+watch(riskFilter, (v, oldV) => {
+  const hasAll = v.includes('all')
+  const hasOthers = v.some((x) => x !== 'all')
+  if (hasAll && hasOthers) {
+    const addedAll = !oldV?.includes('all')
+    if (addedAll) {
+      riskFilter.value = ['all']
+    } else {
+      riskFilter.value = v.filter((x) => x !== 'all')
+    }
   }
 })
 
@@ -1011,7 +1018,7 @@ function getCheckinByElder(name: string): ElderHealthCheckin | undefined {
 async function fetchPlans() {
   try {
     const res = await getAllPlans()
-    planOptions.value = (res.data as TravelPlan[]) || []
+    planOptions.value = ((res.data as TravelPlan[]) || []).filter((p) => p.status !== 'cancelled')
   } catch (e) {
     console.error(e)
   }
